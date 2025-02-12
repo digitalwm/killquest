@@ -20,7 +20,7 @@
 
 ## **📜 Features**
 ✔ **Quest System:** Kill entities and gather items to complete quests.  
-✔ **Dynamic Quest Selection:** Players can select quests using a UI (`/qk`).  
+✔ **Dynamic Quest Selection:** Players can select quests using a UI (`/quests`).  
 ✔ **Scoreboard Tracking:** Displays active quest progress in the top-right.  
 ✔ **Auto-Saving:** Quest progress is saved to files per player.  
 ✔ **EconomyAPI Integration:** Players earn credits upon completion.  
