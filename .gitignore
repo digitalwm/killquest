@@ -1,0 +1,5 @@
+# Ignore Maven output directory
+target/
+
+# Ignore Maven settings file
+settings.xml

@@ -1,4 +1,4 @@
-package com.hvm24.killquest;
+package com.digitalwm.killquest;
 
 import cn.nukkit.Player;
 import cn.nukkit.event.EventHandler;

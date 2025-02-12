@@ -1,4 +1,4 @@
-package com.hvm24.killquest;
+package com.digitalwm.killquest;
 
 import java.io.File;
 import java.util.List;

@@ -101,23 +101,23 @@ translations:
 ## **📌 Debugging & Logs**
 - **Startup Log:**
   ```
- [INFO ] [KillQuestPlugin]
- [INFO ] [KillQuestPlugin] ██╗  ██╗██╗██╗     ██╗      ██████╗ ██╗   ██╗███████╗███████╗████████╗
- [INFO ] [KillQuestPlugin] ██║ ██╔╝██║██║     ██║     ██╔═══██╗██║   ██║██╔════╝██╔════╝╚══██╔══╝
- [INFO ] [KillQuestPlugin] █████╔╝ ██║██║     ██║     ██║   ██║██║   ██║█████╗  ███████╗   ██║
- [INFO ] [KillQuestPlugin] ██╔═██╗ ██║██║     ██║     ██║▄▄ ██║██║   ██║██╔══╝  ╚════██║   ██║
- [INFO ] [KillQuestPlugin] ██║  ██╗██║███████╗███████╗╚██████╔╝╚██████╔╝███████╗███████║   ██║
- [INFO ] [KillQuestPlugin] ╚═╝  ╚═╝╚═╝╚══════╝╚══════╝ ╚══▀▀═╝  ╚═════╝ ╚══════╝╚══════╝   ╚═╝
- [INFO ] [KillQuestPlugin]
- [INFO ] [KillQuestPlugin]                            Version: 1.0.0
- [INFO ] [KillQuestPlugin]                            Developed by digitalwm
- [INFO ] [KillQuestPlugin]
- [INFO ] [KillQuestPlugin] Loaded language: en_US with 41 keys.
- [INFO ] [KillQuestPlugin] Loaded language: de_DE with 41 keys.
- [INFO ] [KillQuestPlugin] Total languages loaded: 2
- [INFO ] [KillQuestPlugin] Total translation keys loaded: 82
- [INFO ] [KillQuestPlugin] KillQuestPlugin enabled with 23 available quests.
- [INFO ] [KillQuestPlugin] EconomyAPI found. Rewards enabled.
+  [INFO ] [KillQuestPlugin]
+  [INFO ] [KillQuestPlugin] ██╗  ██╗██╗██╗     ██╗      ██████╗ ██╗   ██╗███████╗███████╗████████╗
+  [INFO ] [KillQuestPlugin] ██║ ██╔╝██║██║     ██║     ██╔═══██╗██║   ██║██╔════╝██╔════╝╚══██╔══╝
+  [INFO ] [KillQuestPlugin] █████╔╝ ██║██║     ██║     ██║   ██║██║   ██║█████╗  ███████╗   ██║
+  [INFO ] [KillQuestPlugin] ██╔═██╗ ██║██║     ██║     ██║▄▄ ██║██║   ██║██╔══╝  ╚════██║   ██║
+  [INFO ] [KillQuestPlugin] ██║  ██╗██║███████╗███████╗╚██████╔╝╚██████╔╝███████╗███████║   ██║
+  [INFO ] [KillQuestPlugin] ╚═╝  ╚═╝╚═╝╚══════╝╚══════╝ ╚══▀▀═╝  ╚═════╝ ╚══════╝╚══════╝   ╚═╝
+  [INFO ] [KillQuestPlugin]
+  [INFO ] [KillQuestPlugin]                            Version: 1.0.0
+  [INFO ] [KillQuestPlugin]                            Developed by digitalwm
+  [INFO ] [KillQuestPlugin]
+  [INFO ] [KillQuestPlugin] Loaded language: en_US with 41 keys.
+  [INFO ] [KillQuestPlugin] Loaded language: de_DE with 41 keys.
+  [INFO ] [KillQuestPlugin] Total languages loaded: 2
+  [INFO ] [KillQuestPlugin] Total translation keys loaded: 82
+  [INFO ] [KillQuestPlugin] KillQuestPlugin enabled with 23 available quests.
+  [INFO ] [KillQuestPlugin] EconomyAPI found. Rewards enabled.
   ```
 
 ---

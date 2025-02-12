@@ -1,11 +1,11 @@
-package com.hvm24.killquest;
+package com.digitalwm.killquest;
 
 import cn.nukkit.Player;
 import cn.nukkit.Server;
 import cn.nukkit.scoreboard.Scoreboard;
 import cn.nukkit.scoreboard.Scoreboard.SortOrder;
 import cn.nukkit.scoreboard.Scoreboard.DisplaySlot;
-import com.hvm24.killquest.ActiveQuest;
+import com.digitalwm.killquest.ActiveQuest;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
