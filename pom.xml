@@ -6,8 +6,8 @@
     
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>com.digitalwm.killrewards</groupId>
-  <artifactId>KillRewards</artifactId>
+  <groupId>com.digitalwm.killquestplugin</groupId>
+  <artifactId>KillQuestPlugin</artifactId>
   <version>1.0</version>
   
   <build>
