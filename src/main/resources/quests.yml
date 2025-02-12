@@ -1,0 +1,185 @@
+quests:
+  - name: "Monster Slayer"
+    description: "Kill 10 Zombies and 5 Skeletons"
+    killTargets:
+      Zombie: 10
+      Skeleton: 5
+    gatherItems: {}   # No gathering required for this quest
+    reward: 15
+
+  - name: "Resource Collector"
+    description: "Gather 20 Diamonds and 10 Iron Ingots"
+    killTargets: {}   # No kills required
+    gatherItems:
+      diamond: 20
+      iron_ingot: 10
+    reward: 80
+
+  - name: "Epic Quest"
+    description: "Kill 15 Zombies, gather 10 Diamonds and 5 Gold Ingots"
+    killTargets:
+      Zombie: 15
+    gatherItems:
+      diamond: 10
+      gold_ingot: 5
+    reward: 100
+
+  - name: "Nether Explorer"
+    description: "Survive the Nether and bring back 3 Blaze Rods and 5 Ghast Tears"
+    killTargets:
+      Blaze: 3
+      Ghast: 5
+    gatherItems: {}
+    reward: 250
+
+  - name: "Ocean Adventurer"
+    description: "Dive deep and collect 5 Heart of the Sea and 10 Prismarine Shards"
+    killTargets: {}
+    gatherItems:
+      heart_of_the_sea: 5
+      prismarine_shard: 10
+    reward: 300
+
+  - name: "Enderman Hunter"
+    description: "Hunt down 10 Endermen and collect 5 Ender Pearls"
+    killTargets:
+      Enderman: 10
+    gatherItems:
+      ender_pearl: 5
+    reward: 200
+
+  - name: "Lumberjack Challenge"
+    description: "Chop down 50 Oak Logs and 30 Birch Logs"
+    killTargets: {}
+    gatherItems:
+      oak_log: 50
+      birch_log: 30
+    reward: 150
+
+  - name: "Creeper Explosion"
+    description: "Defeat 15 Creepers and collect 5 Gunpowder"
+    killTargets:
+      Creeper: 15
+    gatherItems:
+      gunpowder: 5
+    reward: 180
+
+  - name: "Treasure Hunter"
+    description: "Find and collect 3 Emeralds and 5 Gold Ingots"
+    killTargets: {}
+    gatherItems:
+      emerald: 3
+      gold_ingot: 5
+    reward: 220
+
+  - name: "Ice Walker"
+    description: "Mine 20 Packed Ice and 10 Blue Ice blocks"
+    killTargets: {}
+    gatherItems:
+      packed_ice: 20
+      blue_ice: 10
+    reward: 270
+
+  - name: "Dragon Slayer"
+    description: "Defeat the Ender Dragon and collect 1 Dragon Egg"
+    killTargets:
+      Ender Dragon: 1
+    gatherItems:
+      dragon_egg: 1
+    reward: 500
+
+  - name: "Farmer's Delight"
+    description: "Harvest 30 Wheat, 20 Carrots, and 10 Potatoes"
+    killTargets: {}
+    gatherItems:
+      wheat: 30
+      carrot: 20
+      potato: 10
+    reward: 170
+
+  - name: "Mountain Climber"
+    description: "Climb to the highest peak and collect 5 Snow Blocks and 3 Emeralds"
+    killTargets: {}
+    gatherItems:
+      snow_block: 5
+      emerald: 3
+    reward: 230
+
+  - name: "Piglin Barterer"
+    description: "Trade with Piglins to obtain 5 Ender Pearls and 3 Obsidian"
+    killTargets: {}
+    gatherItems:
+      ender_pearl: 5
+      obsidian: 3
+    reward: 280
+
+  - name: "Guardian Guardian"
+    description: "Defeat 8 Guardians and collect 5 Prismarine Crystals"
+    killTargets:
+      Guardian: 8
+    gatherItems:
+      prismarine_crystals: 5
+    reward: 240
+
+  - name: "Village Hero"
+    description: "Protect the village by defeating 10 Pillagers and 5 Vindicators"
+    killTargets:
+      Pillager: 10
+      Vindicator: 5
+    gatherItems: {}
+    reward: 300
+
+  - name: "Enchanted Crafter"
+    description: "Craft and collect 3 Enchanted Golden Apples and 5 Enchanted Books"
+    killTargets: {}
+    gatherItems:
+      enchanted_golden_apple: 3
+      enchanted_book: 5
+    reward: 350
+
+  - name: "Cave Diver"
+    description: "Mine 15 Diamonds and 10 Redstone Dust from deep caves"
+    killTargets: {}
+    gatherItems:
+      diamond: 15
+      redstone: 10
+    reward: 320
+
+  - name: "Wither Wrecker"
+    description: "Summon and defeat the Wither, then collect 1 Nether Star"
+    killTargets:
+      Wither: 1
+    gatherItems:
+      nether_star: 1
+    reward: 500
+
+  - name: "Beekeeper's Quest"
+    description: "Collect 10 Honey Bottles and 5 Honeycomb from beehives"
+    killTargets: {}
+    gatherItems:
+      honey_bottle: 10
+      honeycomb: 5
+    reward: 180
+
+  - name: "Desert Treasure"
+    description: "Explore desert temples and collect 5 Gold Ingots and 3 Emeralds"
+    killTargets: {}
+    gatherItems:
+      gold_ingot: 5
+      emerald: 3
+    reward: 250
+
+  - name: "Sky High"
+    description: "Build a tower to the world height limit and place 10 Glowstone Blocks at the top"
+    killTargets: {}
+    gatherItems:
+      glowstone: 10
+    reward: 200
+
+  - name: "Fisherman's Luck"
+    description: "Catch 10 Fish and 2 Enchanted Fishing Rods"
+    killTargets: {}
+    gatherItems:
+      fish: 10
+      fishing_rod: 2
+    reward: 190

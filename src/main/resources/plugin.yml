@@ -1,0 +1,8 @@
+name: KillQuestPlugin
+version: 1.0.0
+main: com.digitalwm.killquest.KillQuestPlugin
+api: [1.1.0]
+commands:
+  quests:
+    description: "Opens the quest selection form."
+    usage: "/quests"

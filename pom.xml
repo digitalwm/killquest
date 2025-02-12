@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project 
+    xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.digitalwm.killrewards</groupId>
+  <artifactId>KillRewards</artifactId>
+  <version>1.0</version>
+  
+  <build>
+    <defaultGoal>install</defaultGoal>
+    <sourceDirectory>${basedir}/src/main/java</sourceDirectory>
+    <plugins>
+      <!-- Maven Compiler Plugin -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <source>1.8</source>
+          <target>1.8</target>
+        </configuration>
+      </plugin>
+    </plugins>
+    <!-- Include plugin.yml from src/main/resources -->
+    <resources>
+      <resource>
+        <targetPath>.</targetPath>
+        <filtering>true</filtering>
+        <directory>${basedir}/src/main/resources/</directory>
+        <includes>
+          <include>*.yml</include>
+        </includes>
+      </resource>
+    </resources>
+  </build>
+  
+  <repositories>
+    <!-- Repository for Nukkit snapshots -->
+    <repository>
+      <id>opencollab-repository-maven-snapshots</id>
+      <name>Opencollab Repository</name>
+      <url>https://repo.opencollab.dev/maven-snapshots</url>
+    </repository>
+  </repositories>
+  
+  <dependencies>
+    <!-- Use the timestamped snapshot version for Nukkit -->
+    <dependency>
+      <groupId>cn.nukkit</groupId>
+      <artifactId>nukkit</artifactId>
+      <version>1.0-20250123.153617-1205</version>
+      <scope>provided</scope>
+    </dependency>
+    <!-- Use EconomyAPI from JitPack. Note the version "v2.0.2" (if that’s the published tag) -->
+    <dependency>
+      <groupId>me.onebone</groupId>
+      <artifactId>economyapi</artifactId>
+      <version>2.0.0-SNAPSHOT</version>
+      <scope>provided</scope>
+  </dependency>
+  </dependencies>
+ 
+</project>
