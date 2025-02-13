@@ -70,6 +70,9 @@ public class KillQuestPlugin extends PluginBase implements Listener, CommandExec
     // Reference to the EconomyAPI instance.
     private EconomyAPI economy = null;
 
+    // Active Jump Puzzles
+    private final List<JumpPuzzleGenerator> activeJumpPuzzles = new ArrayList<>();
+
     public Map<String, ActiveQuest> getActiveQuests() {
         return activeQuests;
     }
@@ -111,6 +114,11 @@ public class KillQuestPlugin extends PluginBase implements Listener, CommandExec
 
         getServer().getScheduler().scheduleRepeatingTask(this, new QuestScoreboardUpdater(this), 40);
         getServer().getPluginManager().registerEvents(new ScoreboardListeners(this), this);
+        getServer().getPluginManager().registerEvents(new JumpPuzzleListener(this), this);
+    }
+
+    public List<JumpPuzzleGenerator> getActiveJumpPuzzles() {
+        return activeJumpPuzzles;
     }
 
     @Override
@@ -528,9 +536,9 @@ public class KillQuestPlugin extends PluginBase implements Listener, CommandExec
 
             int length, width, maxHeight;
             try {
-                length = Integer.parseInt(args[0]);
-                width = Integer.parseInt(args[1]);
-                maxHeight = Integer.parseInt(args[2]);
+                length = Math.max(20, Integer.parseInt(args[0]));  // Ensure minimum 20
+                width = Math.max(20, Integer.parseInt(args[1]));   // Ensure minimum 20
+                maxHeight = Math.max(20, Integer.parseInt(args[2])); // Ensure minimum 20
             } catch (NumberFormatException e) {
                 sender.sendMessage("§cInvalid number format. Use: /jumpgen <length> <width> <height>");
                 return true;
@@ -539,6 +547,7 @@ public class KillQuestPlugin extends PluginBase implements Listener, CommandExec
             // ✅ Use the new class to generate the puzzle
             JumpPuzzleGenerator generator = new JumpPuzzleGenerator(this, player, length, width, maxHeight);
             generator.generate();
+            activeJumpPuzzles.add(generator);
 
             sender.sendMessage("§aJumping puzzle generated inside a cage!");
             return true;
@@ -553,9 +562,9 @@ public class KillQuestPlugin extends PluginBase implements Listener, CommandExec
 
             int length, width, maxHeight;
             try {
-                length = Integer.parseInt(args[0]);
-                width = Integer.parseInt(args[1]);
-                maxHeight = Integer.parseInt(args[2]);
+                length = Math.max(20, Integer.parseInt(args[0]));  // Ensure minimum 20
+                width = Math.max(20, Integer.parseInt(args[1]));   // Ensure minimum 20
+                maxHeight = Math.max(20, Integer.parseInt(args[2])); // Ensure minimum 20
             } catch (NumberFormatException e) {
                 sender.sendMessage("§cInvalid number format. Use: /clearpuzzle <length> <width> <height>");
                 return true;

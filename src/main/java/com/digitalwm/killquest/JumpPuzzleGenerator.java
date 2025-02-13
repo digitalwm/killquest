@@ -4,8 +4,10 @@ import cn.nukkit.Player;
 import cn.nukkit.block.Block;
 import cn.nukkit.level.Level;
 import cn.nukkit.math.Vector3;
+import cn.nukkit.event.player.PlayerMoveEvent;
+import me.onebone.economyapi.EconomyAPI;
 
-import java.util.Random;
+import java.util.*;
 
 public class JumpPuzzleGenerator {
     
@@ -15,6 +17,14 @@ public class JumpPuzzleGenerator {
     private final int length, width, maxHeight;
     private final Player player;
     private final KillQuestPlugin plugin;
+    
+    private Vector3 puzzleMin;
+    private Vector3 puzzleMax;
+    private Vector3 startBlock;
+    private Vector3 endBlock;
+
+    private final Set<Vector3> jumpBlocks = new HashSet<>();
+    private final Map<Player, Long> playerStartTimes = new HashMap<>();
 
     public JumpPuzzleGenerator(KillQuestPlugin plugin, Player player, int length, int width, int maxHeight) {
         this.level = player.getLevel();
@@ -24,6 +34,14 @@ public class JumpPuzzleGenerator {
         this.maxHeight = maxHeight;
         this.plugin = plugin;
         this.player = player;
+        this.setPuzzleBoundaries(this.startPos, this.width, this.length, this.maxHeight);
+    }
+
+    public void setPuzzleBoundaries(Vector3 startPos, int width, int length, int maxHeight) {
+        maxHeight++;
+        puzzleMin = new Vector3(startPos.x - width / 2, startPos.y, startPos.z - length / 2);
+        puzzleMax = new Vector3(startPos.x + width / 2, startPos.y + maxHeight, startPos.z + length / 2);
+        plugin.getLogger().info("Puzzle boundaries set: " + puzzleMin + " to " + puzzleMax);
     }
 
     public void generate() {
@@ -137,34 +155,40 @@ public class JumpPuzzleGenerator {
     private void generatePuzzle() {
         plugin.getLogger().info("Generating jump puzzle...");
 
-        // ✅ Start at bottom-left corner but inset by 1 block (not directly on the edge)
         Vector3 lastBlock = new Vector3(
             startPos.x - width / 2 + 1,
             startPos.y,
             startPos.z - length / 2 + 1
         );
 
-        level.setBlock(lastBlock, Block.get(Block.GOLD_BLOCK)); // Start block
+        startBlock = lastBlock.clone();
+        level.setBlock(startBlock, Block.get(Block.GOLD_BLOCK));
 
         int currentHeight = 0;
         int blocksAtCurrentHeight = 0;
 
         while (currentHeight < maxHeight) {
-            int newX, newZ;
             boolean validMove = false;
+            int retryCount = 0; // ✅ Prevent infinite loops
+            int newX = (int) lastBlock.x, newZ = (int) lastBlock.z;
 
             do {
-                int xOffset = random.nextInt(3) - 1; // -1, 0, or 1
-                int zOffset = random.nextInt(3) - 1; // -1, 0, or 1
+                retryCount++;
+                if (retryCount > 50) { // ✅ If we can't find a position after 50 tries, force move
+                    plugin.getLogger().warning("Stuck in loop! Forcing move...");
+                    break;
+                }
 
-                // ✅ Ensure spacing of 1 to 2 blocks per move
+                int xOffset = random.nextInt(3) - 1;
+                int zOffset = random.nextInt(3) - 1;
+
                 xOffset *= random.nextBoolean() ? 2 : 1;
                 zOffset *= random.nextBoolean() ? 2 : 1;
 
                 newX = (int) lastBlock.x + xOffset;
                 newZ = (int) lastBlock.z + zOffset;
 
-                // ✅ Prevent out-of-bounds movement
+                // ✅ Ensure the new block is within bounds
                 if (newX <= startPos.x - width / 2 + 1 || newX >= startPos.x + width / 2 - 1) {
                     continue;
                 }
@@ -172,64 +196,88 @@ public class JumpPuzzleGenerator {
                     continue;
                 }
 
-                // ✅ Ensure the block is not directly above the last block
-                if (newX != (int) lastBlock.x || newZ != (int) lastBlock.z) {
-                    // ✅ Ensure the block is NOT on the edge (except start block)
-                    if (newX > startPos.x - width / 2 + 1 && newX < startPos.x + width / 2 - 1 &&
-                        newZ > startPos.z - length / 2 + 1 && newZ < startPos.z + length / 2 - 1) {
-                        
-                        // ✅ Ensure second level and beyond have air below them
-                        if (currentHeight >= 1) {
-                            Vector3 belowBlock = new Vector3(newX, startPos.y + currentHeight - 1, newZ);
-                            if (level.getBlock(belowBlock).getId() != Block.AIR) {
-                                continue; // Skip if block is not air
-                            }
-                        }
+                // ✅ Ensure blocks below are air starting from level 3
+                if (currentHeight >= 3) {
+                    Vector3 below1 = new Vector3(newX, startPos.y + currentHeight - 1, newZ);
+                    Vector3 below2 = new Vector3(newX, startPos.y + currentHeight - 2, newZ);
 
-                        // ✅ Ensure third level and beyond have TWO blocks of air below them
-                        if (currentHeight >= 2) {
-                            Vector3 belowBlock1 = new Vector3(newX, startPos.y + currentHeight - 1, newZ);
-                            Vector3 belowBlock2 = new Vector3(newX, startPos.y + currentHeight - 2, newZ);
-                            if (level.getBlock(belowBlock1).getId() != Block.AIR || level.getBlock(belowBlock2).getId() != Block.AIR) {
-                                continue; // Skip if both blocks are not air
-                            }
-                        }
-
-                        // ✅ Ensure fourth level and beyond have THREE blocks of air below them
-                        if (currentHeight >= 3) {
-                            Vector3 belowBlock1 = new Vector3(newX, startPos.y + currentHeight - 1, newZ);
-                            Vector3 belowBlock2 = new Vector3(newX, startPos.y + currentHeight - 2, newZ);
-                            Vector3 belowBlock3 = new Vector3(newX, startPos.y + currentHeight - 3, newZ);
-                            if (level.getBlock(belowBlock1).getId() != Block.AIR || 
-                                level.getBlock(belowBlock2).getId() != Block.AIR || 
-                                level.getBlock(belowBlock3).getId() != Block.AIR) {
-                                continue; // Skip if any of the three blocks below are not air
-                            }
-                        }
-
-                        validMove = true;
+                    if (level.getBlock(below1).getId() != Block.AIR || level.getBlock(below2).getId() != Block.AIR) {
+                        continue; // Skip this position if blocks are below
                     }
                 }
 
+                // ✅ Ensure blocks below are air starting from level 4
+                if (currentHeight >= 4) {
+                    Vector3 below1 = new Vector3(newX, startPos.y + currentHeight - 1, newZ);
+                    Vector3 below2 = new Vector3(newX, startPos.y + currentHeight - 2, newZ);
+                    Vector3 below3 = new Vector3(newX, startPos.y + currentHeight - 3, newZ);
+
+                    if (level.getBlock(below1).getId() != Block.AIR || level.getBlock(below2).getId() != Block.AIR || level.getBlock(below3).getId() != Block.AIR) {
+                        continue; // Skip this position if blocks are below
+                    }
+                }
+
+                validMove = true;
+
             } while (!validMove);
 
+            // ✅ Place the jump block
             Vector3 newBlock = new Vector3(newX, startPos.y + currentHeight, newZ);
-            level.setBlock(newBlock, Block.get(Block.STONE)); // Place platform
+            level.setBlock(newBlock, Block.get(Block.STONE));
+            jumpBlocks.add(newBlock);
+
+            plugin.getLogger().info("Placed block at x: " + newBlock.x + " z: " + newBlock.z);
+
             blocksAtCurrentHeight++;
 
-            // ✅ Ensure at least 4 blocks are placed per height level
+            // ✅ Ensure at least 4 blocks are placed per height level before increasing height
             if (blocksAtCurrentHeight >= 8) {
-                currentHeight++; // Move upward only after placing 4 blocks
+                currentHeight++;
                 blocksAtCurrentHeight = 0;
             }
 
             lastBlock = newBlock.clone();
         }
 
-        // ✅ Place end block at max height
-        Vector3 endBlock = new Vector3(lastBlock.x, lastBlock.y, lastBlock.z);
+        // ✅ Place end block
+        endBlock = lastBlock.clone();
         level.setBlock(endBlock, Block.get(Block.DIAMOND_BLOCK));
-
         plugin.getLogger().info("Jump puzzle generated successfully!");
+    }
+
+    private boolean isInsidePuzzle(Vector3 pos) {
+        return (pos.x >= puzzleMin.x && pos.x <= puzzleMax.x) &&
+               (pos.y >= puzzleMin.y && pos.y <= puzzleMax.y) &&
+               (pos.z >= puzzleMin.z && pos.z <= puzzleMax.z);
+    }
+
+    public boolean isPlayerInside(Player player) {
+        return isInsidePuzzle(player.getPosition()); // ✅ Reuse `isInsidePuzzle`
+    }
+
+    public void handlePlayerMovement(PlayerMoveEvent event) {
+        Player player = event.getPlayer();
+        Vector3 pos = player.getPosition().floor();
+        pos.y = pos.y - 1;
+
+        if (pos.equals(startBlock) && !playerStartTimes.containsKey(player)) {
+            player.sendMessage("§eYou started the jump puzzle! Reach the end within 15 minutes!");
+            playerStartTimes.put(player, System.currentTimeMillis());
+        }
+
+        if (playerStartTimes.containsKey(player)) {
+            long startTime = playerStartTimes.get(player);
+            if (System.currentTimeMillis() - startTime > 15 * 60 * 1000) {
+                player.sendMessage("§cYou ran out of time for the jump puzzle!");
+                playerStartTimes.remove(player);
+                return;
+            }
+
+            if (pos.equals(endBlock)) {
+                player.sendMessage("§aCongratulations! You completed the jump puzzle!");
+                EconomyAPI.getInstance().addMoney(player, 100);
+                playerStartTimes.remove(player);
+            }
+        }
     }
 }
