@@ -8,7 +8,7 @@
 
   <groupId>com.digitalwm.killquestplugin</groupId>
   <artifactId>KillQuestPlugin</artifactId>
-  <version>1.0</version>
+  <version>1.0.1</version>
   
   <build>
     <defaultGoal>install</defaultGoal>

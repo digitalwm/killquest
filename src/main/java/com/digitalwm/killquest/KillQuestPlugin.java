@@ -10,10 +10,15 @@ import cn.nukkit.event.Listener;
 import cn.nukkit.event.EventHandler;
 import cn.nukkit.event.player.PlayerJoinEvent;
 import cn.nukkit.event.player.PlayerQuitEvent;
+import cn.nukkit.event.player.PlayerFishEvent;
 import cn.nukkit.event.entity.EntityDeathEvent;
 import cn.nukkit.event.entity.EntityDamageByEntityEvent;
 import cn.nukkit.event.inventory.InventoryPickupItemEvent;
 import cn.nukkit.event.player.PlayerFormRespondedEvent;
+
+import cn.nukkit.block.Block;
+import cn.nukkit.level.Level;
+import cn.nukkit.math.Vector3;
 
 import cn.nukkit.entity.Entity;
 import cn.nukkit.Player;
@@ -266,7 +271,6 @@ public class KillQuestPlugin extends PluginBase implements Listener, CommandExec
         }
     }
 
-
     /**
      * Loads available quests from quests.yml.
      */
@@ -501,19 +505,73 @@ public class KillQuestPlugin extends PluginBase implements Listener, CommandExec
             sender.sendMessage("This command can only be executed by a player.");
             return true;
         }
+
         Player player = (Player) sender;
-        List<Quest> quests = getRandomQuestsForPlayer(player.getName());
+
+        // Handle Quest Selection
         if (command.getName().equalsIgnoreCase("quests")) {
+            List<Quest> quests = getRandomQuestsForPlayer(player.getName());
             FormWindowSimple form = new FormWindowSimple("Quest Selector", "Select one quest from the list below. Only one active quest is allowed at a time.");
             for (Quest quest : quests) {
-                // Create a new ElementButton instead of passing a string.
                 form.addButton(new ElementButton(quest.getName() + "\n" + quest.getDescription()));
             }
             player.showFormWindow(form);
             return true;
         }
+
+        // Handle Jump Puzzle Generation
+        if (command.getName().equalsIgnoreCase("jumpgen")) {
+            if (args.length < 3) {
+                sender.sendMessage("§cUsage: /jumpgen <length> <width> <height>");
+                return false;
+            }
+
+            int length, width, maxHeight;
+            try {
+                length = Integer.parseInt(args[0]);
+                width = Integer.parseInt(args[1]);
+                maxHeight = Integer.parseInt(args[2]);
+            } catch (NumberFormatException e) {
+                sender.sendMessage("§cInvalid number format. Use: /jumpgen <length> <width> <height>");
+                return true;
+            }
+
+            // ✅ Use the new class to generate the puzzle
+            JumpPuzzleGenerator generator = new JumpPuzzleGenerator(this, player, length, width, maxHeight);
+            generator.generate();
+
+            sender.sendMessage("§aJumping puzzle generated inside a cage!");
+            return true;
+        }
+
+        // ✅ Handle Puzzle Area Clearing
+        if (command.getName().equalsIgnoreCase("clearpuzzle")) {
+            if (args.length < 3) {
+                sender.sendMessage("§cUsage: /clearpuzzle <length> <width> <height>");
+                return false;
+            }
+
+            int length, width, maxHeight;
+            try {
+                length = Integer.parseInt(args[0]);
+                width = Integer.parseInt(args[1]);
+                maxHeight = Integer.parseInt(args[2]);
+            } catch (NumberFormatException e) {
+                sender.sendMessage("§cInvalid number format. Use: /clearpuzzle <length> <width> <height>");
+                return true;
+            }
+
+            getLogger().info("Clearing puzzle area for player " + player.getName() + "...");
+            JumpPuzzleGenerator generator = new JumpPuzzleGenerator(this, player, length, width, maxHeight);
+            generator.clearOnly();
+            sender.sendMessage("§aJump puzzle area cleared!");
+            getLogger().info("Puzzle area successfully cleared.");
+            return true;
+        }
+
         return false;
     }
+
 
 
     /**
@@ -579,6 +637,31 @@ public class KillQuestPlugin extends PluginBase implements Listener, CommandExec
                 }
             }, 1);
         }
+    }
+
+    @EventHandler
+    public void onPlayerFish(PlayerFishEvent event) {
+        Player player = event.getPlayer();
+        Item loot = event.getLoot(); // ✅ Get the caught item
+
+        if (loot != null) {
+            String itemName = normalizeItemName(loot.getName());
+            player.sendMessage("§aYou caught a " + itemName + "!");
+
+            getLogger().info("Player " + player.getName() + " fished up: " + itemName);
+
+            // ✅ Schedule a delayed task to update quest progress
+            getServer().getScheduler().scheduleDelayedTask(this, new Runnable() {
+                @Override
+                public void run() {
+                    updateQuestProgressForPlayer(player);
+                }
+            }, 1); // Delay 1 tick to ensure inventory updates
+        }
+    }
+
+    private String normalizeItemName(String itemName) {
+        return itemName.toLowerCase().replace(" ", "_");
     }
 
     /**
