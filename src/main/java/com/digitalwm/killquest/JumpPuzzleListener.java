@@ -21,7 +21,7 @@ public class JumpPuzzleListener implements Listener {
         Player player = event.getPlayer();
 
         // ✅ Cycle through all active puzzles and trigger their event handling
-        for (JumpPuzzleGenerator puzzle : plugin.getActiveJumpPuzzles()) {
+        for (JumpPuzzleGenerator puzzle : plugin.getActiveJumpPuzzles().values()) { // ✅ Fix applied
             if (puzzle.isPlayerInside(player)) {
                 puzzle.handlePlayerMovement(event);
                 break; // Stop checking after finding one matching puzzle
@@ -34,7 +34,7 @@ public class JumpPuzzleListener implements Listener {
         Player player = event.getPlayer();
         Vector3 pos = event.getBlock().getLocation();
 
-        for (JumpPuzzleGenerator puzzle : plugin.getActiveJumpPuzzles()) {
+        for (JumpPuzzleGenerator puzzle : plugin.getActiveJumpPuzzles().values()) { // ✅ Fix applied
             if (puzzle.isPlayerInside(player)) {
                 event.setCancelled(true);
                 player.sendMessage("§cYou cannot place blocks inside the jumping puzzle!");
@@ -48,7 +48,7 @@ public class JumpPuzzleListener implements Listener {
         Player player = event.getPlayer();
         Vector3 pos = event.getBlock().getLocation();
 
-        for (JumpPuzzleGenerator puzzle : plugin.getActiveJumpPuzzles()) {
+        for (JumpPuzzleGenerator puzzle : plugin.getActiveJumpPuzzles().values()) { // ✅ Fix applied
             if (puzzle.isPlayerInside(player)) {
                 event.setCancelled(true);
                 player.sendMessage("§cYou cannot break blocks inside the jumping puzzle!");

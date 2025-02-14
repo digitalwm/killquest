@@ -26,7 +26,11 @@ public class JumpPuzzleGenerator {
     private final Set<Vector3> jumpBlocks = new HashSet<>();
     private final Map<Player, Long> playerStartTimes = new HashMap<>();
 
-    public JumpPuzzleGenerator(KillQuestPlugin plugin, Player player, int length, int width, int maxHeight) {
+    // List to track all blocks generated in the puzzle
+    private final List<Vector3> puzzleBlocks = new ArrayList<>();
+    private final String puzzleName; // ✅ Declare puzzle name
+
+    public JumpPuzzleGenerator(KillQuestPlugin plugin, Player player, String puzzleName, int length, int width, int maxHeight) {
         this.level = player.getLevel();
         this.startPos = player.getPosition().floor();
         this.length = length;
@@ -34,6 +38,7 @@ public class JumpPuzzleGenerator {
         this.maxHeight = maxHeight;
         this.plugin = plugin;
         this.player = player;
+        this.puzzleName = puzzleName; // ✅ Store name
         this.setPuzzleBoundaries(this.startPos, this.width, this.length, this.maxHeight);
     }
 
@@ -73,7 +78,6 @@ public class JumpPuzzleGenerator {
         plugin.getLogger().info("Area cleared successfully!");
     }
 
-
     private void generateBase() {
         plugin.getLogger().info("Generating puzzle base with light-emitting blocks...");
 
@@ -92,7 +96,7 @@ public class JumpPuzzleGenerator {
         for (int x = 0; x <= width; x++) {
             for (int z = 0; z <= length; z++) {
                 Vector3 currentPos = new Vector3(baseStart.x + x, baseStart.y, baseStart.z + z);
-
+                puzzleBlocks.add(currentPos); // ✅ Track base blocks
                 // ✅ Place a Red Block in the exact center
                 if (currentPos.x == centerBlock.x && currentPos.z == centerBlock.z) {
                     level.setBlock(currentPos, Block.get(Block.REDSTONE_BLOCK));
@@ -116,16 +120,20 @@ public class JumpPuzzleGenerator {
 
         for (int y = 0; y <= maxHeight; y++) {
             for (int x = 0; x <= width; x++) {
-                // Left Wall
-                level.setBlock(new Vector3(baseStart.x + x, baseStart.y + y, baseStart.z), Block.get(Block.GLASS));
-                // Right Wall
-                level.setBlock(new Vector3(baseStart.x + x, baseStart.y + y, baseStart.z + length), Block.get(Block.GLASS));
+                Vector3 leftWall = new Vector3(baseStart.x + x, baseStart.y + y, baseStart.z);
+                Vector3 rightWall = new Vector3(baseStart.x + x, baseStart.y + y, baseStart.z + length);
+                level.setBlock(leftWall, Block.get(Block.GLASS));
+                level.setBlock(rightWall, Block.get(Block.GLASS));
+                puzzleBlocks.add(leftWall);
+                puzzleBlocks.add(rightWall);
             }
             for (int z = 0; z <= length; z++) {
-                // Front Wall
-                level.setBlock(new Vector3(baseStart.x, baseStart.y + y, baseStart.z + z), Block.get(Block.GLASS));
-                // Back Wall
-                level.setBlock(new Vector3(baseStart.x + width, baseStart.y + y, baseStart.z + z), Block.get(Block.GLASS));
+                Vector3 frontWall = new Vector3(baseStart.x, baseStart.y + y, baseStart.z + z);
+                Vector3 backWall = new Vector3(baseStart.x + width, baseStart.y + y, baseStart.z + z);
+                level.setBlock(frontWall, Block.get(Block.GLASS));
+                level.setBlock(backWall, Block.get(Block.GLASS));
+                puzzleBlocks.add(frontWall);
+                puzzleBlocks.add(backWall);
             }
         }
 
@@ -163,6 +171,7 @@ public class JumpPuzzleGenerator {
 
         startBlock = lastBlock.clone();
         level.setBlock(startBlock, Block.get(Block.GOLD_BLOCK));
+        puzzleBlocks.add(startBlock);
 
         int currentHeight = 0;
         int blocksAtCurrentHeight = 0;
@@ -223,8 +232,8 @@ public class JumpPuzzleGenerator {
 
             // ✅ Place the jump block
             Vector3 newBlock = new Vector3(newX, startPos.y + currentHeight, newZ);
+            puzzleBlocks.add(newBlock);
             level.setBlock(newBlock, Block.get(Block.STONE));
-            jumpBlocks.add(newBlock);
 
             plugin.getLogger().info("Placed block at x: " + newBlock.x + " z: " + newBlock.z);
 
@@ -242,6 +251,7 @@ public class JumpPuzzleGenerator {
         // ✅ Place end block
         endBlock = lastBlock.clone();
         level.setBlock(endBlock, Block.get(Block.DIAMOND_BLOCK));
+        puzzleBlocks.add(endBlock);
         plugin.getLogger().info("Jump puzzle generated successfully!");
     }
 
@@ -279,5 +289,16 @@ public class JumpPuzzleGenerator {
                 playerStartTimes.remove(player);
             }
         }
+    }
+
+    public void removePuzzle() {
+        plugin.getLogger().info("Removing jump puzzle...");
+
+        for (Vector3 blockPos : puzzleBlocks) {
+            level.setBlock(blockPos, Block.get(Block.AIR));
+        }
+
+        puzzleBlocks.clear(); // Clear the list after removal
+        plugin.getLogger().info("Jump puzzle removed successfully!");
     }
 }

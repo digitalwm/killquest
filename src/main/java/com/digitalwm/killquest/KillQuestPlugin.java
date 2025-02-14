@@ -71,7 +71,7 @@ public class KillQuestPlugin extends PluginBase implements Listener, CommandExec
     private EconomyAPI economy = null;
 
     // Active Jump Puzzles
-    private final List<JumpPuzzleGenerator> activeJumpPuzzles = new ArrayList<>();
+    private final Map<String, JumpPuzzleGenerator> activeJumpPuzzles = new HashMap<>();
 
     public Map<String, ActiveQuest> getActiveQuests() {
         return activeQuests;
@@ -117,7 +117,7 @@ public class KillQuestPlugin extends PluginBase implements Listener, CommandExec
         getServer().getPluginManager().registerEvents(new JumpPuzzleListener(this), this);
     }
 
-    public List<JumpPuzzleGenerator> getActiveJumpPuzzles() {
+    public Map<String, JumpPuzzleGenerator> getActiveJumpPuzzles() {
         return activeJumpPuzzles;
     }
 
@@ -529,27 +529,36 @@ public class KillQuestPlugin extends PluginBase implements Listener, CommandExec
 
         // Handle Jump Puzzle Generation
         if (command.getName().equalsIgnoreCase("jumpgen")) {
-            if (args.length < 3) {
-                sender.sendMessage("§cUsage: /jumpgen <length> <width> <height>");
+            if (args.length < 4) {
+                sender.sendMessage("§cUsage: /jumpgen <name> <length> <width> <height>");
                 return false;
             }
 
             int length, width, maxHeight;
+
+            String puzzleName = args[0];
+
+            // ✅ Check for duplicate names
+            if (activeJumpPuzzles.containsKey(puzzleName)) {
+                sender.sendMessage("§cA jump puzzle with this name already exists!");
+                return true;
+            }
+
             try {
                 length = Math.max(20, Integer.parseInt(args[0]));  // Ensure minimum 20
                 width = Math.max(20, Integer.parseInt(args[1]));   // Ensure minimum 20
                 maxHeight = Math.max(20, Integer.parseInt(args[2])); // Ensure minimum 20
             } catch (NumberFormatException e) {
-                sender.sendMessage("§cInvalid number format. Use: /jumpgen <length> <width> <height>");
+                sender.sendMessage("§cInvalid number format. Use: /jumpgen <name> <length> <width> <height>");
                 return true;
             }
 
             // ✅ Use the new class to generate the puzzle
-            JumpPuzzleGenerator generator = new JumpPuzzleGenerator(this, player, length, width, maxHeight);
+            JumpPuzzleGenerator generator = new JumpPuzzleGenerator(this, player, puzzleName, length, width, maxHeight);
             generator.generate();
-            activeJumpPuzzles.add(generator);
+            activeJumpPuzzles.put(puzzleName, generator);
 
-            sender.sendMessage("§aJumping puzzle generated inside a cage!");
+            sender.sendMessage("§aJump puzzle '" + puzzleName + "' generated!");
             return true;
         }
 
@@ -571,7 +580,7 @@ public class KillQuestPlugin extends PluginBase implements Listener, CommandExec
             }
 
             getLogger().info("Clearing puzzle area for player " + player.getName() + "...");
-            JumpPuzzleGenerator generator = new JumpPuzzleGenerator(this, player, length, width, maxHeight);
+            JumpPuzzleGenerator generator = new JumpPuzzleGenerator(this, player, "clear", length, width, maxHeight);
             generator.clearOnly();
             sender.sendMessage("§aJump puzzle area cleared!");
             getLogger().info("Puzzle area successfully cleared.");
