@@ -37,6 +37,7 @@
 ✔ **Player Movement Tracking**: Detect when players start and complete puzzles.
 ✔ **Block Restrictions**: Prevent players from modifying puzzle areas.
 ✔ **Puzzle Management Commands**: Create, list, and remove puzzles dynamically.
+
 ---
 
 ## **🎮 How to Use**
