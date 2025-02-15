@@ -25,6 +25,8 @@ import cn.nukkit.Player;
 import cn.nukkit.item.Item;
 import cn.nukkit.utils.Config;
 
+import java.io.IOException;
+
 // Import form API classes using the proper packages:
 import cn.nukkit.form.window.FormWindowSimple;
 import cn.nukkit.form.response.FormResponseSimple;
@@ -73,6 +75,8 @@ public class KillQuestPlugin extends PluginBase implements Listener, CommandExec
     // Active Jump Puzzles
     private final Map<String, JumpPuzzleGenerator> activeJumpPuzzles = new HashMap<>();
 
+    private File puzzlesFile;
+
     public Map<String, ActiveQuest> getActiveQuests() {
         return activeQuests;
     }
@@ -115,6 +119,26 @@ public class KillQuestPlugin extends PluginBase implements Listener, CommandExec
         getServer().getScheduler().scheduleRepeatingTask(this, new QuestScoreboardUpdater(this), 40);
         getServer().getPluginManager().registerEvents(new ScoreboardListeners(this), this);
         getServer().getPluginManager().registerEvents(new JumpPuzzleListener(this), this);
+
+        getLogger().info("Loading saved puzzles...");
+
+        // Ensure data folder exists
+        if (!getDataFolder().exists()) {
+            getDataFolder().mkdirs();
+        }
+
+        // Initialize puzzle file if missing (but do NOT overwrite existing ones)
+        puzzlesFile = new File(getDataFolder(), "puzzles.yml");
+        if (!puzzlesFile.exists()) {
+            try {
+                puzzlesFile.createNewFile();
+                getLogger().info("Created new puzzles.yml file.");
+            } catch (IOException e) {
+                getLogger().warning("Failed to create puzzles.yml: " + e.getMessage());
+            }
+        }
+
+        loadJumpPuzzles(); // ✅ Load puzzles AFTER ensuring file exists
     }
 
     public Map<String, JumpPuzzleGenerator> getActiveJumpPuzzles() {
@@ -127,6 +151,8 @@ public class KillQuestPlugin extends PluginBase implements Listener, CommandExec
             saveActiveQuestProgress(playerName);
         }
         getLogger().info("KillQuestPlugin disabled and active quest progress saved.");
+        saveJumpPuzzles();
+        getLogger().info("Puzzles saved.");
     }
 
     private void logBanner() {
@@ -545,27 +571,28 @@ public class KillQuestPlugin extends PluginBase implements Listener, CommandExec
             }
 
             try {
-                length = Math.max(20, Integer.parseInt(args[0]));  // Ensure minimum 20
-                width = Math.max(20, Integer.parseInt(args[1]));   // Ensure minimum 20
-                maxHeight = Math.max(20, Integer.parseInt(args[2])); // Ensure minimum 20
+                length = Math.max(20, Integer.parseInt(args[1]));  // Ensure minimum 20
+                width = Math.max(20, Integer.parseInt(args[2]));   // Ensure minimum 20
+                maxHeight = Math.max(20, Integer.parseInt(args[3])); // Ensure minimum 20
             } catch (NumberFormatException e) {
                 sender.sendMessage("§cInvalid number format. Use: /jumpgen <name> <length> <width> <height>");
                 return true;
             }
 
             // ✅ Use the new class to generate the puzzle
-            JumpPuzzleGenerator generator = new JumpPuzzleGenerator(this, player, puzzleName, length, width, maxHeight);
+            JumpPuzzleGenerator generator = new JumpPuzzleGenerator(this, player.getLevel(), player.getPosition().floor(), puzzleName, length, width, maxHeight);
             generator.generate();
             activeJumpPuzzles.put(puzzleName, generator);
+            saveJumpPuzzles(); // ✅ Save immediately after generation
 
             sender.sendMessage("§aJump puzzle '" + puzzleName + "' generated!");
             return true;
         }
 
         // ✅ Handle Puzzle Area Clearing
-        if (command.getName().equalsIgnoreCase("clearpuzzle")) {
+        if (command.getName().equalsIgnoreCase("cleararea")) {
             if (args.length < 3) {
-                sender.sendMessage("§cUsage: /clearpuzzle <length> <width> <height>");
+                sender.sendMessage("§cUsage: /cleararea <length> <width> <height>");
                 return false;
             }
 
@@ -575,15 +602,51 @@ public class KillQuestPlugin extends PluginBase implements Listener, CommandExec
                 width = Math.max(20, Integer.parseInt(args[1]));   // Ensure minimum 20
                 maxHeight = Math.max(20, Integer.parseInt(args[2])); // Ensure minimum 20
             } catch (NumberFormatException e) {
-                sender.sendMessage("§cInvalid number format. Use: /clearpuzzle <length> <width> <height>");
+                sender.sendMessage("§cInvalid number format. Use: /cleararea <length> <width> <height>");
                 return true;
             }
 
             getLogger().info("Clearing puzzle area for player " + player.getName() + "...");
-            JumpPuzzleGenerator generator = new JumpPuzzleGenerator(this, player, "clear", length, width, maxHeight);
+            JumpPuzzleGenerator generator = new JumpPuzzleGenerator(this, player.getLevel(), player.getPosition().floor(), "clear", length, width, maxHeight);
             generator.clearOnly();
             sender.sendMessage("§aJump puzzle area cleared!");
             getLogger().info("Puzzle area successfully cleared.");
+            return true;
+        }
+
+        // Handle Puzzle clear
+        if (command.getName().equalsIgnoreCase("clearpuzzle")) {
+            if (args.length < 1) {
+                sender.sendMessage("§cUsage: /clearpuzzle <name>");
+                return false;
+            }
+
+            String puzzleName = args[0];
+            JumpPuzzleGenerator puzzle = activeJumpPuzzles.get(puzzleName);
+
+            if (puzzle == null) {
+                sender.sendMessage("§cNo puzzle found with that name.");
+                return true;
+            }
+
+            puzzle.removePuzzle(); // ✅ Call new remove function
+            activeJumpPuzzles.remove(puzzleName);
+            saveJumpPuzzles(); // ✅ Save changes
+
+            sender.sendMessage("§aJump puzzle '" + puzzleName + "' cleared!");
+            return true;
+        }
+
+        // Handle List puzzle
+        if (command.getName().equalsIgnoreCase("listpuzzle")) {
+            if (activeJumpPuzzles.isEmpty()) {
+                sender.sendMessage("§cNo puzzles available.");
+            } else {
+                sender.sendMessage("§aActive Jump Puzzles:");
+                for (String puzzleName : activeJumpPuzzles.keySet()) {
+                    sender.sendMessage("§6- " + puzzleName);
+                }
+            }
             return true;
         }
 
@@ -736,5 +799,38 @@ public class KillQuestPlugin extends PluginBase implements Listener, CommandExec
 
     String getPlayerLanguage(Player player) {
         return player.getLoginChainData().getLanguageCode(); // ✅ This works!
+    }
+
+    public void saveJumpPuzzles() {
+        List<Map<String, Object>> puzzleData = new ArrayList<>();
+        for (JumpPuzzleGenerator puzzle : activeJumpPuzzles.values()) {
+            puzzleData.add(puzzle.toMap());
+        }
+        Config config = new Config(puzzlesFile, Config.YAML);
+        config.set("puzzles", puzzleData);
+        config.save();
+    }
+
+    public void loadJumpPuzzles() {
+        if (!puzzlesFile.exists()) {
+            getLogger().info("No saved puzzles found.");
+            return;
+        }
+
+        Config config = new Config(puzzlesFile, Config.YAML);
+
+        // ✅ Explicitly cast to List<Map<String, Object>> to ensure type safety
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> puzzleData = (List<Map<String, Object>>) (List<?>) config.getMapList("puzzles");
+
+        for (Map<String, Object> data : puzzleData) {
+            JumpPuzzleGenerator puzzle = JumpPuzzleGenerator.fromMap(this, data);
+            if (puzzle != null) { // ✅ Ensure puzzle is valid before adding
+                activeJumpPuzzles.put(puzzle.getPuzzleName(), puzzle);
+                getLogger().info("Loaded puzzle: " + puzzle.getPuzzleName());
+            } else {
+                getLogger().warning("Skipping invalid puzzle entry.");
+            }
+        }
     }
 }

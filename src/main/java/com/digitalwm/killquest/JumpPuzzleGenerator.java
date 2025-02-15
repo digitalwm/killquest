@@ -6,6 +6,8 @@ import cn.nukkit.level.Level;
 import cn.nukkit.math.Vector3;
 import cn.nukkit.event.player.PlayerMoveEvent;
 import me.onebone.economyapi.EconomyAPI;
+import java.util.HashMap;
+import java.util.Map;
 
 import java.util.*;
 
@@ -15,7 +17,7 @@ public class JumpPuzzleGenerator {
     private final Level level;
     private final Vector3 startPos;
     private final int length, width, maxHeight;
-    private final Player player;
+//    private final Player player;
     private final KillQuestPlugin plugin;
     
     private Vector3 puzzleMin;
@@ -23,21 +25,21 @@ public class JumpPuzzleGenerator {
     private Vector3 startBlock;
     private Vector3 endBlock;
 
-    private final Set<Vector3> jumpBlocks = new HashSet<>();
     private final Map<Player, Long> playerStartTimes = new HashMap<>();
 
     // List to track all blocks generated in the puzzle
-    private final List<Vector3> puzzleBlocks = new ArrayList<>();
+    
+    private final Map<Vector3, String> puzzleBlocks = new HashMap<>(); // ✅ Stores block type
+
     private final String puzzleName; // ✅ Declare puzzle name
 
-    public JumpPuzzleGenerator(KillQuestPlugin plugin, Player player, String puzzleName, int length, int width, int maxHeight) {
-        this.level = player.getLevel();
-        this.startPos = player.getPosition().floor();
+    public JumpPuzzleGenerator(KillQuestPlugin plugin, Level level, Vector3 startPos, String puzzleName, int length, int width, int maxHeight) {
+        this.level = level;
+        this.startPos = startPos;
         this.length = length;
         this.width = width;
         this.maxHeight = maxHeight;
         this.plugin = plugin;
-        this.player = player;
         this.puzzleName = puzzleName; // ✅ Store name
         this.setPuzzleBoundaries(this.startPos, this.width, this.length, this.maxHeight);
     }
@@ -47,6 +49,10 @@ public class JumpPuzzleGenerator {
         puzzleMin = new Vector3(startPos.x - width / 2, startPos.y, startPos.z - length / 2);
         puzzleMax = new Vector3(startPos.x + width / 2, startPos.y + maxHeight, startPos.z + length / 2);
         plugin.getLogger().info("Puzzle boundaries set: " + puzzleMin + " to " + puzzleMax);
+    }
+
+    public String getPuzzleName() {
+        return puzzleName;
     }
 
     public void generate() {
@@ -96,7 +102,7 @@ public class JumpPuzzleGenerator {
         for (int x = 0; x <= width; x++) {
             for (int z = 0; z <= length; z++) {
                 Vector3 currentPos = new Vector3(baseStart.x + x, baseStart.y, baseStart.z + z);
-                puzzleBlocks.add(currentPos); // ✅ Track base blocks
+                trackBlock(currentPos, "BASE");
                 // ✅ Place a Red Block in the exact center
                 if (currentPos.x == centerBlock.x && currentPos.z == centerBlock.z) {
                     level.setBlock(currentPos, Block.get(Block.REDSTONE_BLOCK));
@@ -124,23 +130,23 @@ public class JumpPuzzleGenerator {
                 Vector3 rightWall = new Vector3(baseStart.x + x, baseStart.y + y, baseStart.z + length);
                 level.setBlock(leftWall, Block.get(Block.GLASS));
                 level.setBlock(rightWall, Block.get(Block.GLASS));
-                puzzleBlocks.add(leftWall);
-                puzzleBlocks.add(rightWall);
+                trackBlock(leftWall, "WALL");
+                trackBlock(rightWall, "WALL");
             }
             for (int z = 0; z <= length; z++) {
                 Vector3 frontWall = new Vector3(baseStart.x, baseStart.y + y, baseStart.z + z);
                 Vector3 backWall = new Vector3(baseStart.x + width, baseStart.y + y, baseStart.z + z);
                 level.setBlock(frontWall, Block.get(Block.GLASS));
                 level.setBlock(backWall, Block.get(Block.GLASS));
-                puzzleBlocks.add(frontWall);
-                puzzleBlocks.add(backWall);
+                trackBlock(frontWall, "WALL");
+                trackBlock(backWall, "WALL");
             }
         }
 
         plugin.getLogger().info("Walls generated successfully!");
     }
 
-    private Vector3 getForwardDirection(Vector3 position) {
+/*    private Vector3 getForwardDirection(Vector3 position) {
         float yaw = (float) this.player.getYaw(); // Get player's yaw (rotation)
 
         if (yaw >= -45 && yaw <= 45) { // Facing Z+
@@ -152,12 +158,10 @@ public class JumpPuzzleGenerator {
         } else { // Facing X+
             return new Vector3(1, 0, 0);
         }
-    }
+    }*/
 
     public void clearOnly() {
-        plugin.getLogger().info("Starting area cleanup for jump puzzle...");
         clearArea();
-        plugin.getLogger().info("Jump puzzle area cleared successfully!");
     }
 
     private void generatePuzzle() {
@@ -171,7 +175,7 @@ public class JumpPuzzleGenerator {
 
         startBlock = lastBlock.clone();
         level.setBlock(startBlock, Block.get(Block.GOLD_BLOCK));
-        puzzleBlocks.add(startBlock);
+        trackBlock(startBlock, "START"); // ✅ Track start block
 
         int currentHeight = 0;
         int blocksAtCurrentHeight = 0;
@@ -232,10 +236,10 @@ public class JumpPuzzleGenerator {
 
             // ✅ Place the jump block
             Vector3 newBlock = new Vector3(newX, startPos.y + currentHeight, newZ);
-            puzzleBlocks.add(newBlock);
+            trackBlock(newBlock, "JUMP"); // ✅ Track jump blocks
             level.setBlock(newBlock, Block.get(Block.STONE));
 
-            plugin.getLogger().info("Placed block at x: " + newBlock.x + " z: " + newBlock.z);
+            plugin.getLogger().debug("Placed block at x: " + newBlock.x + " z: " + newBlock.z);
 
             blocksAtCurrentHeight++;
 
@@ -251,7 +255,7 @@ public class JumpPuzzleGenerator {
         // ✅ Place end block
         endBlock = lastBlock.clone();
         level.setBlock(endBlock, Block.get(Block.DIAMOND_BLOCK));
-        puzzleBlocks.add(endBlock);
+        trackBlock(endBlock, "END"); // ✅ Track end block
         plugin.getLogger().info("Jump puzzle generated successfully!");
     }
 
@@ -292,13 +296,120 @@ public class JumpPuzzleGenerator {
     }
 
     public void removePuzzle() {
-        plugin.getLogger().info("Removing jump puzzle...");
+        plugin.getLogger().info("Removing puzzle '" + puzzleName + "'...");
 
-        for (Vector3 blockPos : puzzleBlocks) {
-            level.setBlock(blockPos, Block.get(Block.AIR));
+        // ✅ Iterate over the saved block positions and remove them
+        for (Map.Entry<Vector3, String> entry : puzzleBlocks.entrySet()) {
+            Vector3 pos = entry.getKey();
+            level.setBlock(pos, Block.get(Block.AIR));
         }
 
-        puzzleBlocks.clear(); // Clear the list after removal
-        plugin.getLogger().info("Jump puzzle removed successfully!");
+        // ✅ Clear the block tracking map
+        puzzleBlocks.clear();
+
+        plugin.getLogger().info("Puzzle '" + puzzleName + "' removed successfully!");
+    }
+
+    public Map<String, Object> toMap() {
+        Map<String, Object> data = new HashMap<>();
+        data.put("name", puzzleName);
+        data.put("startX", startPos.x);
+        data.put("startY", startPos.y);
+        data.put("startZ", startPos.z);
+        data.put("length", length);
+        data.put("width", width);
+        data.put("maxHeight", maxHeight);
+
+        List<Map<String, Object>> blockList = new ArrayList<>();
+        for (Map.Entry<Vector3, String> entry : puzzleBlocks.entrySet()) {
+            Map<String, Object> blockData = new HashMap<>();
+            blockData.put("x", entry.getKey().x);
+            blockData.put("y", entry.getKey().y);
+            blockData.put("z", entry.getKey().z);
+            blockData.put("type", entry.getValue()); // ✅ Save block type
+            blockList.add(blockData);
+        }
+        data.put("puzzleBlocks", blockList);
+
+        return data;
+    }
+
+    public static JumpPuzzleGenerator fromMap(KillQuestPlugin plugin, Map<String, Object> data) {
+        if (!data.containsKey("name") || !data.containsKey("length") || !data.containsKey("width") || 
+            !data.containsKey("maxHeight") || !data.containsKey("startX") || 
+            !data.containsKey("startY") || !data.containsKey("startZ")) {
+            plugin.getLogger().warning("Skipping puzzle load: Missing required fields.");
+            return null; // ✅ Skip invalid puzzles
+        }
+
+        String name = (String) data.get("name");
+        int length = ((Number) data.get("length")).intValue();
+        int width = ((Number) data.get("width")).intValue();
+        int maxHeight = ((Number) data.get("maxHeight")).intValue();
+
+        int startX = ((Number) data.get("startX")).intValue();
+        int startY = ((Number) data.get("startY")).intValue();
+        int startZ = ((Number) data.get("startZ")).intValue();
+        Vector3 startPos = new Vector3(startX, startY, startZ); // ✅ Load correct position
+
+        // ✅ Get the default level
+        Level defaultLevel = plugin.getServer().getDefaultLevel();
+        if (defaultLevel == null) {
+            plugin.getLogger().warning("No default level found. Cannot load puzzle: " + name);
+            return null;
+        }
+
+        JumpPuzzleGenerator puzzle = new JumpPuzzleGenerator(plugin, defaultLevel, startPos, name, length, width, maxHeight);
+
+        // ✅ Ensure saved blocks exist before accessing them
+        if (data.containsKey("puzzleBlocks")) {
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> blocksData = (List<Map<String, Object>>) data.get("puzzleBlocks");
+            Map<Vector3, String> puzzleBlocks = new HashMap<>(); // Create a modifiable map
+            for (Map<String, Object> blockData : blocksData) {
+                if (blockData.containsKey("x") && blockData.containsKey("y") && blockData.containsKey("z") && blockData.containsKey("type")) {
+                    int x = ((Number) blockData.get("x")).intValue();
+                    int y = ((Number) blockData.get("y")).intValue();
+                    int z = ((Number) blockData.get("z")).intValue();
+                    String type = (String) blockData.get("type");
+                    Vector3 blockPos = new Vector3(x, y, z);
+                    puzzleBlocks.put(blockPos, type); // Use the modifiable map
+
+                    // ✅ Check if the block is the start or end block
+                    if ("START".equals(type)) {
+                        puzzle.startBlock = blockPos;
+                    } else if ("END".equals(type)) {
+                        puzzle.endBlock = blockPos;
+                    }
+                } else {
+                    plugin.getLogger().warning("Skipping invalid block entry in puzzle: " + name);
+                }
+            }
+            // Update the puzzle with the modified blocks
+            puzzle.setPuzzleBlocks(puzzleBlocks);
+        } else {
+            plugin.getLogger().warning("Puzzle " + name + " has no saved blocks.");
+        }
+
+        return puzzle;
+    }
+
+    private void trackBlock(Vector3 pos, String type) {
+        puzzleBlocks.put(pos, type);
+    }
+
+    public Map<Vector3, String> getPuzzleBlocks() {
+        return Collections.unmodifiableMap(this.puzzleBlocks);
+    }
+
+    // Method to update the internal map with new entries
+    public void updatePuzzleBlocks(Map<Vector3, String> newBlocks) {
+        this.puzzleBlocks.putAll(newBlocks);
+    }
+
+    // Method to clear and update the internal map with new entries
+    public void setPuzzleBlocks(Map<Vector3, String> newBlocks) {
+        this.puzzleBlocks.clear();
+        this.puzzleBlocks.putAll(newBlocks);
     }
 }
