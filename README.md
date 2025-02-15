@@ -1,5 +1,12 @@
-## **KillQuest - A Nukkit Quest System**
-**KillQuest** is a **feature-rich quest system** for **Nukkit** servers, allowing players to complete **kill and gather quests** for rewards. It includes **multilingual support**, **scoreboard tracking**, and **EconomyAPI integration**.
+## **KillQuest - A Nukkit Quest System** v1.0.1
+**KillQuest** is a **feature-rich quest system** for **Nukkit** servers, allowing players to complete **kill and gather quests** for rewards, and challenge themselves with procedurally generated jumping puzzles. It includes **multilingual support**, **scoreboard tracking**, and **EconomyAPI integration**.
+
+---
+
+## Changes to 1.0.1
+
+- Added Handling of onPlayerFish event so fishing quests can be created
+- Added complete new loging of generating jumping puzzles
 
 ---
 
@@ -25,7 +32,11 @@
 ✔ **Auto-Saving:** Quest progress is saved to files per player.  
 ✔ **EconomyAPI Integration:** Players earn credits upon completion.  
 ✔ **Multilingual Support:** Uses Minecraft’s translations for entity/item names.  
-
+✔ **Jumping Puzzles**: Procedurally generate jumping puzzles with varying heights and difficulties.
+✔ **Puzzle Persistence**: Puzzles are saved and can be reloaded after server restarts.
+✔ **Player Movement Tracking**: Detect when players start and complete puzzles.
+✔ **Block Restrictions**: Prevent players from modifying puzzle areas.
+✔ **Puzzle Management Commands**: Create, list, and remove puzzles dynamically.
 ---
 
 ## **🎮 How to Use**
@@ -47,11 +58,21 @@
   - **Quest progress resets**
   - **Scoreboard updates**
 
+### How the Jump Puzzle Works
+1. A player generates a puzzle using `/jumpgen`.
+2. The puzzle is enclosed with walls and a light-emitting base.
+3. Players must jump across blocks that are generated to be challenging but solvable.
+4. A tracking system monitors when a player starts and completes the puzzle.
+5. Upon completion, the player receives 100 credits via EconomyAPI.
+
 ---
 
 ## **📝 Configuration**
 ### **`quests.yml`**
 Quests are defined in `plugins/KillQuestPlugin/quests.yml`:
+
+### `puzzles.yml`
+Stores all active puzzles, including blocks, start, and end positions, ensuring persistence after restarts.
 
 ```yaml
 quests:
@@ -95,6 +116,9 @@ translations:
 |---------|------------|
 | `/quests` | Opens the quest selection UI |
 | `/killquest reload` | Reloads quests and translations |
+| `/jumpgen <name> <length> <width> <height>` | Generates a jumping puzzle with a unique name. |
+| `/clearpuzzle <name>` | Clears a specific puzzle. |
+| `/listpuzzles` | Lists all active puzzles. |
 
 ---
 
@@ -123,7 +147,7 @@ translations:
 ---
 
 ## **💡 Future Improvements**
-- ✅ **More Quest Types:** Fishing, Crafting, Mining
+- ✅ **More Quest Types:** Crafting
 - ✅ **Permissions Support**
 - ✅ **More Customization Options**
 - ✅ **SQL Database support**
