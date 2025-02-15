@@ -32,11 +32,11 @@
 ✔ **Auto-Saving:** Quest progress is saved to files per player.  
 ✔ **EconomyAPI Integration:** Players earn credits upon completion.  
 ✔ **Multilingual Support:** Uses Minecraft’s translations for entity/item names.  
-✔ **Jumping Puzzles**: Procedurally generate jumping puzzles with varying heights and difficulties.
-✔ **Puzzle Persistence**: Puzzles are saved and can be reloaded after server restarts.
-✔ **Player Movement Tracking**: Detect when players start and complete puzzles.
-✔ **Block Restrictions**: Prevent players from modifying puzzle areas.
-✔ **Puzzle Management Commands**: Create, list, and remove puzzles dynamically.
+✔ **Jumping Puzzles:** Procedurally generate jumping puzzles with varying heights and difficulties.
+✔ **Puzzle Persistence:** Puzzles are saved and can be reloaded after server restarts.
+✔ **Player Movement Tracking:** Detect when players start and complete puzzles.
+✔ **Block Restrictions:** Prevent players from modifying puzzle areas.
+✔ **Puzzle Management Commands:** Create, list, and remove puzzles dynamically.
 
 ---
 
