@@ -8,7 +8,7 @@ commands:
     usage: "/quests"
   jumpgen:
     description: "Generates a random jumping puzzle."
-    usage: "/jumpgen <length> <width> <height> <name>"
+    usage: "/jumpgen <name> <length> <width> <height>"
     permission: killquest.jumpgen
     aliases: [jp, jumppuzzle]
   cleararea:
