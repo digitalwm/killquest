@@ -1,8 +1,41 @@
 name: KillQuestPlugin
-version: 1.0.0
+version: 1.0.1
 main: com.digitalwm.killquest.KillQuestPlugin
 api: [1.1.0]
 commands:
   quests:
     description: "Opens the quest selection form."
     usage: "/quests"
+  jumpgen:
+    description: "Generates a random jumping puzzle."
+    usage: "/jumpgen <name> <length> <width> <height>"
+    permission: killquest.jumpgen
+    aliases: [jp, jumppuzzle]
+  cleararea:
+    description: "Clear an area ahead of the puzzle"
+    usage: "/cleararea <length> <width> <height>"
+    permission: killquest.clear
+    aliases: [ca]
+  clearpuzzle:
+    description: "Clear an create puzzle"
+    usage: "/clearpuzzle <name:string>"
+    permission: killquest.clearpuzzle
+    aliases: [cp]
+  listpuzzle:
+    description: "List all generated puzzles"
+    usage: "/listpuzzle"
+    permission: killquest:listpuzzle
+
+permissions:
+  killquest.jumpgen:
+    description: "Allows the player to generate a jump puzzle."
+    default: op
+  killquest.clear:
+    description: "Allows the player to clear an area for jump puzzle."
+    default: op
+  killquest.clearpuzzle:
+    description: "Allows the player to clear a create jump puzzle."
+    default: op
+  killquest.listpuzzle:
+    description: "List all generated puzzles."
+    default: op

@@ -10,15 +10,22 @@ import cn.nukkit.event.Listener;
 import cn.nukkit.event.EventHandler;
 import cn.nukkit.event.player.PlayerJoinEvent;
 import cn.nukkit.event.player.PlayerQuitEvent;
+import cn.nukkit.event.player.PlayerFishEvent;
 import cn.nukkit.event.entity.EntityDeathEvent;
 import cn.nukkit.event.entity.EntityDamageByEntityEvent;
 import cn.nukkit.event.inventory.InventoryPickupItemEvent;
 import cn.nukkit.event.player.PlayerFormRespondedEvent;
 
+import cn.nukkit.block.Block;
+import cn.nukkit.level.Level;
+import cn.nukkit.math.Vector3;
+
 import cn.nukkit.entity.Entity;
 import cn.nukkit.Player;
 import cn.nukkit.item.Item;
 import cn.nukkit.utils.Config;
+
+import java.io.IOException;
 
 // Import form API classes using the proper packages:
 import cn.nukkit.form.window.FormWindowSimple;
@@ -65,6 +72,11 @@ public class KillQuestPlugin extends PluginBase implements Listener, CommandExec
     // Reference to the EconomyAPI instance.
     private EconomyAPI economy = null;
 
+    // Active Jump Puzzles
+    private final Map<String, JumpPuzzleGenerator> activeJumpPuzzles = new HashMap<>();
+
+    private File puzzlesFile;
+
     public Map<String, ActiveQuest> getActiveQuests() {
         return activeQuests;
     }
@@ -106,6 +118,31 @@ public class KillQuestPlugin extends PluginBase implements Listener, CommandExec
 
         getServer().getScheduler().scheduleRepeatingTask(this, new QuestScoreboardUpdater(this), 40);
         getServer().getPluginManager().registerEvents(new ScoreboardListeners(this), this);
+        getServer().getPluginManager().registerEvents(new JumpPuzzleListener(this), this);
+
+        getLogger().info("Loading saved puzzles...");
+
+        // Ensure data folder exists
+        if (!getDataFolder().exists()) {
+            getDataFolder().mkdirs();
+        }
+
+        // Initialize puzzle file if missing (but do NOT overwrite existing ones)
+        puzzlesFile = new File(getDataFolder(), "puzzles.yml");
+        if (!puzzlesFile.exists()) {
+            try {
+                puzzlesFile.createNewFile();
+                getLogger().info("Created new puzzles.yml file.");
+            } catch (IOException e) {
+                getLogger().warning("Failed to create puzzles.yml: " + e.getMessage());
+            }
+        }
+
+        loadJumpPuzzles(); // ✅ Load puzzles AFTER ensuring file exists
+    }
+
+    public Map<String, JumpPuzzleGenerator> getActiveJumpPuzzles() {
+        return activeJumpPuzzles;
     }
 
     @Override
@@ -114,6 +151,8 @@ public class KillQuestPlugin extends PluginBase implements Listener, CommandExec
             saveActiveQuestProgress(playerName);
         }
         getLogger().info("KillQuestPlugin disabled and active quest progress saved.");
+        saveJumpPuzzles();
+        getLogger().info("Puzzles saved.");
     }
 
     private void logBanner() {
@@ -265,7 +304,6 @@ public class KillQuestPlugin extends PluginBase implements Listener, CommandExec
             scoreboard.hideFor(player);
         }
     }
-
 
     /**
      * Loads available quests from quests.yml.
@@ -501,19 +539,120 @@ public class KillQuestPlugin extends PluginBase implements Listener, CommandExec
             sender.sendMessage("This command can only be executed by a player.");
             return true;
         }
+
         Player player = (Player) sender;
-        List<Quest> quests = getRandomQuestsForPlayer(player.getName());
+
+        // Handle Quest Selection
         if (command.getName().equalsIgnoreCase("quests")) {
+            List<Quest> quests = getRandomQuestsForPlayer(player.getName());
             FormWindowSimple form = new FormWindowSimple("Quest Selector", "Select one quest from the list below. Only one active quest is allowed at a time.");
             for (Quest quest : quests) {
-                // Create a new ElementButton instead of passing a string.
                 form.addButton(new ElementButton(quest.getName() + "\n" + quest.getDescription()));
             }
             player.showFormWindow(form);
             return true;
         }
+
+        // Handle Jump Puzzle Generation
+        if (command.getName().equalsIgnoreCase("jumpgen")) {
+            if (args.length < 4) {
+                sender.sendMessage("§cUsage: /jumpgen <name> <length> <width> <height>");
+                return false;
+            }
+
+            int length, width, maxHeight;
+
+            String puzzleName = args[0];
+
+            // ✅ Check for duplicate names
+            if (activeJumpPuzzles.containsKey(puzzleName)) {
+                sender.sendMessage("§cA jump puzzle with this name already exists!");
+                return true;
+            }
+
+            try {
+                length = Math.max(20, Integer.parseInt(args[1]));  // Ensure minimum 20
+                width = Math.max(20, Integer.parseInt(args[2]));   // Ensure minimum 20
+                maxHeight = Math.max(20, Integer.parseInt(args[3])); // Ensure minimum 20
+            } catch (NumberFormatException e) {
+                sender.sendMessage("§cInvalid number format. Use: /jumpgen <name> <length> <width> <height>");
+                return true;
+            }
+
+            // ✅ Use the new class to generate the puzzle
+            JumpPuzzleGenerator generator = new JumpPuzzleGenerator(this, player.getLevel(), player.getPosition().floor(), puzzleName, length, width, maxHeight);
+            generator.generate();
+            activeJumpPuzzles.put(puzzleName, generator);
+            saveJumpPuzzles(); // ✅ Save immediately after generation
+
+            sender.sendMessage("§aJump puzzle '" + puzzleName + "' generated!");
+            return true;
+        }
+
+        // ✅ Handle Puzzle Area Clearing
+        if (command.getName().equalsIgnoreCase("cleararea")) {
+            if (args.length < 3) {
+                sender.sendMessage("§cUsage: /cleararea <length> <width> <height>");
+                return false;
+            }
+
+            int length, width, maxHeight;
+            try {
+                length = Math.max(20, Integer.parseInt(args[0]));  // Ensure minimum 20
+                width = Math.max(20, Integer.parseInt(args[1]));   // Ensure minimum 20
+                maxHeight = Math.max(20, Integer.parseInt(args[2])); // Ensure minimum 20
+            } catch (NumberFormatException e) {
+                sender.sendMessage("§cInvalid number format. Use: /cleararea <length> <width> <height>");
+                return true;
+            }
+
+            getLogger().info("Clearing puzzle area for player " + player.getName() + "...");
+            JumpPuzzleGenerator generator = new JumpPuzzleGenerator(this, player.getLevel(), player.getPosition().floor(), "clear", length, width, maxHeight);
+            generator.clearOnly();
+            sender.sendMessage("§aJump puzzle area cleared!");
+            getLogger().info("Puzzle area successfully cleared.");
+            return true;
+        }
+
+        // Handle Puzzle clear
+        if (command.getName().equalsIgnoreCase("clearpuzzle")) {
+            if (args.length < 1) {
+                sender.sendMessage("§cUsage: /clearpuzzle <name>");
+                return false;
+            }
+
+            String puzzleName = args[0];
+            JumpPuzzleGenerator puzzle = activeJumpPuzzles.get(puzzleName);
+
+            if (puzzle == null) {
+                sender.sendMessage("§cNo puzzle found with that name.");
+                return true;
+            }
+
+            puzzle.removePuzzle(); // ✅ Call new remove function
+            activeJumpPuzzles.remove(puzzleName);
+            saveJumpPuzzles(); // ✅ Save changes
+
+            sender.sendMessage("§aJump puzzle '" + puzzleName + "' cleared!");
+            return true;
+        }
+
+        // Handle List puzzle
+        if (command.getName().equalsIgnoreCase("listpuzzle")) {
+            if (activeJumpPuzzles.isEmpty()) {
+                sender.sendMessage("§cNo puzzles available.");
+            } else {
+                sender.sendMessage("§aActive Jump Puzzles:");
+                for (String puzzleName : activeJumpPuzzles.keySet()) {
+                    sender.sendMessage("§6- " + puzzleName);
+                }
+            }
+            return true;
+        }
+
         return false;
     }
+
 
 
     /**
@@ -581,6 +720,31 @@ public class KillQuestPlugin extends PluginBase implements Listener, CommandExec
         }
     }
 
+    @EventHandler
+    public void onPlayerFish(PlayerFishEvent event) {
+        Player player = event.getPlayer();
+        Item loot = event.getLoot(); // ✅ Get the caught item
+
+        if (loot != null) {
+            String itemName = normalizeItemName(loot.getName());
+            player.sendMessage("§aYou caught a " + itemName + "!");
+
+            getLogger().info("Player " + player.getName() + " fished up: " + itemName);
+
+            // ✅ Schedule a delayed task to update quest progress
+            getServer().getScheduler().scheduleDelayedTask(this, new Runnable() {
+                @Override
+                public void run() {
+                    updateQuestProgressForPlayer(player);
+                }
+            }, 1); // Delay 1 tick to ensure inventory updates
+        }
+    }
+
+    private String normalizeItemName(String itemName) {
+        return itemName.toLowerCase().replace(" ", "_");
+    }
+
     /**
      * Event handler for entity death events.
      * Tracks kill progress for the player's active quest.
@@ -635,5 +799,38 @@ public class KillQuestPlugin extends PluginBase implements Listener, CommandExec
 
     String getPlayerLanguage(Player player) {
         return player.getLoginChainData().getLanguageCode(); // ✅ This works!
+    }
+
+    public void saveJumpPuzzles() {
+        List<Map<String, Object>> puzzleData = new ArrayList<>();
+        for (JumpPuzzleGenerator puzzle : activeJumpPuzzles.values()) {
+            puzzleData.add(puzzle.toMap());
+        }
+        Config config = new Config(puzzlesFile, Config.YAML);
+        config.set("puzzles", puzzleData);
+        config.save();
+    }
+
+    public void loadJumpPuzzles() {
+        if (!puzzlesFile.exists()) {
+            getLogger().info("No saved puzzles found.");
+            return;
+        }
+
+        Config config = new Config(puzzlesFile, Config.YAML);
+
+        // ✅ Explicitly cast to List<Map<String, Object>> to ensure type safety
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> puzzleData = (List<Map<String, Object>>) (List<?>) config.getMapList("puzzles");
+
+        for (Map<String, Object> data : puzzleData) {
+            JumpPuzzleGenerator puzzle = JumpPuzzleGenerator.fromMap(this, data);
+            if (puzzle != null) { // ✅ Ensure puzzle is valid before adding
+                activeJumpPuzzles.put(puzzle.getPuzzleName(), puzzle);
+                getLogger().info("Loaded puzzle: " + puzzle.getPuzzleName());
+            } else {
+                getLogger().warning("Skipping invalid puzzle entry.");
+            }
+        }
     }
 }
