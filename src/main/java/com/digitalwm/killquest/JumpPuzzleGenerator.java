@@ -315,6 +315,7 @@ public class JumpPuzzleGenerator {
 
         if (pos.equals(startBlock) && !playerStartTimes.containsKey(player)) {
             player.sendMessage("§eYou started the jump puzzle! Reach the end within 15 minutes!");
+            plugin.onJumpPuzzleStart(player, puzzleName); // Trigger start event
             playerStartTimes.put(player, System.currentTimeMillis());
         }
 
@@ -338,6 +339,7 @@ public class JumpPuzzleGenerator {
             long startTime = playerStartTimes.get(player);
             if (System.currentTimeMillis() - startTime > 15 * 60 * 1000) {
                 player.sendMessage("§cYou ran out of time for the jump puzzle!");
+                plugin.onJumpPuzzleTimeout(player, puzzleName); // Trigger timeout event
                 playerStartTimes.remove(player);
                 return;
             }
@@ -345,8 +347,8 @@ public class JumpPuzzleGenerator {
             if (pos.equals(endBlock)) {
                 player.sendMessage("§aCongratulations! You completed the jump puzzle!");
                 EconomyAPI.getInstance().addMoney(player, 100);
+                plugin.onJumpPuzzleEnd(player, puzzleName); // Trigger end event
                 playerStartTimes.remove(player);
-
                 resetPuzzleForPlayer(player);
             }
         }

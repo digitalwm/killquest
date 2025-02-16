@@ -47,6 +47,14 @@ import java.util.ArrayList;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
+// Own Events
+
+import com.digitalwm.killquest.events.JumpPuzzleStartEvent;
+import com.digitalwm.killquest.events.JumpPuzzleEndEvent;
+import com.digitalwm.killquest.events.JumpPuzzleTimeoutEvent;
+import com.digitalwm.killquest.events.QuestStartEvent;
+import com.digitalwm.killquest.events.QuestEndEvent;
+
 public class KillQuestPlugin extends PluginBase implements Listener, CommandExecutor {
 
     // List of all available quests (loaded from quests.yml)
@@ -139,6 +147,36 @@ public class KillQuestPlugin extends PluginBase implements Listener, CommandExec
         }
 
         loadJumpPuzzles(); // ✅ Load puzzles AFTER ensuring file exists
+    }
+
+    public void onJumpPuzzleStart(Player player, String puzzleName) {
+        JumpPuzzleStartEvent event = new JumpPuzzleStartEvent(player, puzzleName);
+        getServer().getInstance().getPluginManager().callEvent(event);
+        getLogger().info("Jump puzzle started by " + player.getName() + " for puzzle: " + puzzleName);
+    }
+
+    public void onJumpPuzzleEnd(Player player, String puzzleName) {
+        JumpPuzzleEndEvent event = new JumpPuzzleEndEvent(player, puzzleName);
+        getServer().getInstance().getPluginManager().callEvent(event);
+        getLogger().info("Jump puzzle ended by " + player.getName() + " for puzzle: " + puzzleName);
+    }
+
+    public void onJumpPuzzleTimeout(Player player, String puzzleName) {
+        JumpPuzzleTimeoutEvent event = new JumpPuzzleTimeoutEvent(player, puzzleName);
+        getServer().getInstance().getPluginManager().callEvent(event);
+        getLogger().info("Jump puzzle timed out for player: " + player.getName() + " for puzzle: " + puzzleName);
+    }
+
+    public void onQuestStart(Player player, String questName) {
+        QuestStartEvent event = new QuestStartEvent(player, questName);
+        getServer().getInstance().getPluginManager().callEvent(event);
+        getLogger().info("Quest started by " + player.getName() + ": " + questName);
+    }
+
+    public void onQuestEnd(Player player, String questName) {
+        QuestEndEvent event = new QuestEndEvent(player, questName);
+        getServer().getInstance().getPluginManager().callEvent(event);
+        getLogger().info("Quest ended by " + player.getName() + ": " + questName);
     }
 
     public Map<String, JumpPuzzleGenerator> getActiveJumpPuzzles() {
@@ -463,6 +501,10 @@ public class KillQuestPlugin extends PluginBase implements Listener, CommandExec
             player.sendMessage("§aQuest complete: " + quest.getName() +
                     "§r! You've earned §e" + quest.getReward() + " coins§r.");
             getLogger().debug("Active quest '" + quest.getName() + "' completed for player " + playerName);
+
+            // Trigger Quest End Event
+            onQuestEnd(player, quest.getName());
+
             activeQuests.remove(playerName);
             clearActiveQuestProgress(playerName);
         } else {
@@ -694,6 +736,9 @@ public class KillQuestPlugin extends PluginBase implements Listener, CommandExec
         activeQuests.put(player.getName(), new ActiveQuest(selectedQuest, new QuestProgress()));
         saveActiveQuestProgress(player.getName());
         player.sendMessage("§aActive quest set to: " + selectedQuest.getName());
+
+        // Trigger Quest Start Event
+        onQuestStart(player, selectedQuest.getName());
 
         // ✅ **Update the Scoreboard Immediately**
         if (hasActiveQuest) {
