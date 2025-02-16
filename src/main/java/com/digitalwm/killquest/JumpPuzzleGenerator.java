@@ -2,9 +2,11 @@ package com.digitalwm.killquest;
 
 import cn.nukkit.Player;
 import cn.nukkit.block.Block;
+import cn.nukkit.block.BlockDoor;
 import cn.nukkit.level.Level;
 import cn.nukkit.math.Vector3;
 import cn.nukkit.event.player.PlayerMoveEvent;
+import cn.nukkit.block.BlockDoorWood;
 import me.onebone.economyapi.EconomyAPI;
 import java.util.HashMap;
 import java.util.Map;
@@ -26,6 +28,7 @@ public class JumpPuzzleGenerator {
     private Vector3 endBlock;
 
     private final Map<Player, Long> playerStartTimes = new HashMap<>();
+    private final Map<Player, Long> playerGreenBlockTimes = new HashMap<>();
 
     // List to track all blocks generated in the puzzle
     
@@ -177,6 +180,42 @@ public class JumpPuzzleGenerator {
         level.setBlock(startBlock, Block.get(Block.GOLD_BLOCK));
         trackBlock(startBlock, "START"); // ✅ Track start block
 
+        // ✅ Create wooden doors
+        BlockDoorWood doorBottom1 = new BlockDoorWood();
+        BlockDoorWood doorTop1 = new BlockDoorWood();
+        doorTop1.setDamage(8);
+
+        BlockDoorWood doorBottom2 = new BlockDoorWood();
+        BlockDoorWood doorTop2 = new BlockDoorWood();
+        doorTop2.setDamage(8); // ✅ Set as upper part of the door
+
+        // Door base positions (1 block above start block, placed at the corner)
+        Vector3 doorBase1 = new Vector3(startBlock.x - 1, startBlock.y + 1, startBlock.z);
+        Vector3 doorBase2 = new Vector3(startBlock.x, startBlock.y + 1, startBlock.z - 1);
+
+        // Door top positions (1 block above door bases)
+        Vector3 doorTop1Pos = new Vector3(doorBase1.x, doorBase1.y + 1, doorBase1.z);
+        Vector3 doorTop2Pos = new Vector3(doorBase2.x, doorBase2.y + 1, doorBase2.z);
+
+        // ✅ Place bottom and top door parts
+        level.setBlock(doorBase1, doorBottom1);
+        level.setBlock(doorTop1Pos, doorTop1);
+
+        level.setBlock(doorBase2, doorBottom2);
+        level.setBlock(doorTop2Pos, doorTop2);
+
+        // ✅ Track doors for removal
+        trackBlock(doorBase1, "DOOR_BOTTOM");
+        trackBlock(doorTop1Pos, "DOOR_TOP");
+
+        trackBlock(doorBase2, "DOOR_BOTTOM");
+        trackBlock(doorTop2Pos, "DOOR_TOP");
+
+         // ✅ Add a single green block diagonally opposite to the start block on the same height plane
+        Vector3 greenBlock = new Vector3(puzzleMax.x - 1, startBlock.y, puzzleMax.z - 1);
+        level.setBlock(greenBlock, Block.get(Block.EMERALD_BLOCK));
+        trackBlock(greenBlock, "GREEN"); // ✅ Track green block
+
         int currentHeight = 0;
         int blocksAtCurrentHeight = 0;
 
@@ -276,13 +315,31 @@ public class JumpPuzzleGenerator {
 
         if (pos.equals(startBlock) && !playerStartTimes.containsKey(player)) {
             player.sendMessage("§eYou started the jump puzzle! Reach the end within 15 minutes!");
+            plugin.onJumpPuzzleStart(player, puzzleName); // Trigger start event
             playerStartTimes.put(player, System.currentTimeMillis());
+        }
+
+        // Check if the player is on the green block
+        if (puzzleBlocks.containsKey(pos) && "GREEN".equals(puzzleBlocks.get(pos))) {
+            long currentTime = System.currentTimeMillis();
+            if (!playerGreenBlockTimes.containsKey(player)) {
+                playerGreenBlockTimes.put(player, currentTime);
+            } else {
+                long timeOnGreenBlock = currentTime - playerGreenBlockTimes.get(player);
+                if (timeOnGreenBlock > 5000) { // 5 seconds
+                    player.sendMessage("§cYou stayed on the green block for too long! The puzzle has been reset.");
+                    resetPuzzleForPlayer(player);
+                }
+            }
+        } else {
+            playerGreenBlockTimes.remove(player);
         }
 
         if (playerStartTimes.containsKey(player)) {
             long startTime = playerStartTimes.get(player);
             if (System.currentTimeMillis() - startTime > 15 * 60 * 1000) {
                 player.sendMessage("§cYou ran out of time for the jump puzzle!");
+                plugin.onJumpPuzzleTimeout(player, puzzleName); // Trigger timeout event
                 playerStartTimes.remove(player);
                 return;
             }
@@ -290,7 +347,9 @@ public class JumpPuzzleGenerator {
             if (pos.equals(endBlock)) {
                 player.sendMessage("§aCongratulations! You completed the jump puzzle!");
                 EconomyAPI.getInstance().addMoney(player, 100);
+                plugin.onJumpPuzzleEnd(player, puzzleName); // Trigger end event
                 playerStartTimes.remove(player);
+                resetPuzzleForPlayer(player);
             }
         }
     }
@@ -411,5 +470,19 @@ public class JumpPuzzleGenerator {
     public void setPuzzleBlocks(Map<Vector3, String> newBlocks) {
         this.puzzleBlocks.clear();
         this.puzzleBlocks.putAll(newBlocks);
+    }
+
+    private void resetPuzzleForPlayer(Player player) {
+        // Teleport the player to the center of the puzzle
+        Vector3 centerBlock = new Vector3(
+            startPos.x,
+            startPos.y,
+            startPos.z
+        );
+        player.teleport(centerBlock);
+
+        // Regenerate the puzzle
+        removePuzzle();
+        generate();
     }
 }

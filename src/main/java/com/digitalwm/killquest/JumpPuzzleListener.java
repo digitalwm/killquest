@@ -2,9 +2,11 @@ package com.digitalwm.killquest;
 
 import cn.nukkit.Player;
 import cn.nukkit.event.EventHandler;
+import cn.nukkit.block.BlockDoor;
 import cn.nukkit.event.Listener;
 import cn.nukkit.math.Vector3;
 import cn.nukkit.event.block.BlockBreakEvent;
+import cn.nukkit.event.player.PlayerInteractEvent;
 import cn.nukkit.event.block.BlockPlaceEvent;
 import cn.nukkit.event.player.PlayerMoveEvent;
 
@@ -14,6 +16,13 @@ public class JumpPuzzleListener implements Listener {
 
     public JumpPuzzleListener(KillQuestPlugin plugin) {
         this.plugin = plugin;
+    }
+
+    @EventHandler
+    public void onPlayerInteract(PlayerInteractEvent event) {
+        if (event.getBlock() instanceof BlockDoor) {
+            // plugin.getLogger().info(event.getPlayer().getName() + " interacted with a door at " + event.getBlock().getLocation());
+        }
     }
 
     @EventHandler

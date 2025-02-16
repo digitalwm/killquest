@@ -1,5 +1,6 @@
 name: KillQuestPlugin
-version: 1.0.1
+version: 1.0.2
+author: digitalwm
 main: com.digitalwm.killquest.KillQuestPlugin
 api: [1.1.0]
 commands:
