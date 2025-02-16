@@ -692,6 +692,32 @@ public class KillQuestPlugin extends PluginBase implements Listener, CommandExec
             return true;
         }
 
+        // Handle Puzzle Configuration
+        if (command.getName().equalsIgnoreCase("jumpconfig")) {
+            if (args.length < 2) {
+                sender.sendMessage("§cUsage: /jumpconfig <name> <resetOnCompletion> <greenBlockResetTimeout>");
+                return false;
+            }
+
+            String puzzleName = args[0];
+            JumpPuzzleGenerator puzzle = activeJumpPuzzles.get(puzzleName);
+
+            if (puzzle == null) {
+                sender.sendMessage("§cNo puzzle found with that name.");
+                return true;
+            }
+
+            boolean resetOnCompletion = Boolean.parseBoolean(args[1]);
+            int greenBlockResetTimeout = Integer.parseInt(args[2]);
+
+            puzzle.setResetOnCompletion(resetOnCompletion);
+            puzzle.setGreenBlockResetTimeout(greenBlockResetTimeout);
+            saveJumpPuzzles(); // Save changes
+
+            sender.sendMessage("§aJump puzzle '" + puzzleName + "' configuration updated!");
+            return true;
+        }
+
         return false;
     }
 
