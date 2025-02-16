@@ -36,20 +36,20 @@
 
 ---
 
-## 📜** Features**
-**Quest System:** Kill entities and gather items to complete quests.  
-**Dynamic Quest Selection:** Players can select quests using a UI (`/quests`).  
-**Scoreboard Tracking:** Displays active quest progress in the top-right.  
-**Auto-Saving:** Quest progress is saved to files per player.  
-**EconomyAPI Integration:** Players earn credits upon completion.  
-**Multilingual Support:** Uses Minecraft’s translations for entity/item names.  
-**Jumping Puzzles:** Procedurally generate jumping puzzles with varying heights and difficulties.
-**Puzzle Persistence:** Puzzles are saved and can be reloaded after server restarts.
-**Player Movement Tracking:** Detect when players start and complete puzzles.
-**Block Restrictions:** Prevent players from modifying puzzle areas.
-**Puzzle Management Commands:** Create, list, and remove puzzles dynamically.
-**Puzzle Regen Logic:** Regenerate the given puzzle, when the user completes it or using reset block.
-**Server Events:** The plugin sends events when changes are on Quests and Jumping Puzzles.
+## **📜 Features**
+- **Quest System:** Kill entities and gather items to complete quests.  
+- **Dynamic Quest Selection:** Players can select quests using a UI (`/quests`).  
+- **Scoreboard Tracking:** Displays active quest progress in the top-right.  
+- **Auto-Saving:** Quest progress is saved to files per player.  
+- **EconomyAPI Integration:** Players earn credits upon completion.  
+- **Multilingual Support:** Uses Minecraft’s translations for entity/item names.  
+- **Jumping Puzzles:** Procedurally generate jumping puzzles with varying heights and difficulties.
+- **Puzzle Persistence:** Puzzles are saved and can be reloaded after server restarts.
+- **Player Movement Tracking:** Detect when players start and complete puzzles.
+- **Block Restrictions:** Prevent players from modifying puzzle areas.
+- **Puzzle Management Commands:** Create, list, and remove puzzles dynamically.
+- **Puzzle Regen Logic:** Regenerate the given puzzle, when the user completes it or using reset block.
+- **Server Events:** The plugin sends events when changes are on Quests and Jumping Puzzles.
 
 ---
 
