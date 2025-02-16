@@ -1,4 +1,4 @@
-## **KillQuest - A Nukkit Quest System** v1.0.1
+## **KillQuest - A Nukkit Quest System** v1.0.2
 **KillQuest** is a **feature-rich quest system** for **Nukkit** servers, allowing players to complete **kill and gather quests** for rewards, and challenge themselves with procedurally generated jumping puzzles. It includes **multilingual support**, **scoreboard tracking**, and **EconomyAPI integration**.
 
 ---
