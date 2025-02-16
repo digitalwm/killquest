@@ -1,5 +1,5 @@
 name: KillQuestPlugin
-version: 1.0.2
+version: 1.0.3
 author: digitalwm
 main: com.digitalwm.killquest.KillQuestPlugin
 api: [1.1.0]
@@ -26,6 +26,10 @@ commands:
     description: "List all generated puzzles"
     usage: "/listpuzzle"
     permission: killquest:listpuzzle
+  jumpconfig:
+    description: "Change jumping puzzle values"
+    usage: "/jumpconfig <name> <resetOnCompletion> <greenBlockResetTimeout>"
+    permission: killquest:jumpconfig
 
 permissions:
   killquest.jumpgen:
@@ -39,4 +43,7 @@ permissions:
     default: op
   killquest.listpuzzle:
     description: "List all generated puzzles."
+    default: op
+  killquest.jumpconfig:
+    description: "Change jumping puzzle values"
     default: op
