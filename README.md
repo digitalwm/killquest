@@ -3,7 +3,18 @@
 
 ---
 
-## Changes to 1.0.1
+## Changes in 1.0.2
+- Added regenaration of puzzle when a user finishes it
+- Added regeneration of puzzle, using a reset block. You must stay at least 5 seconds on it
+- Added 2 Doors around the start block so the players can enter and exit the puzzle
+- Added 5 Events to be triggered from within the plugin
+  - JumpPuzzleEndEvent
+  - JumpPuzzleStartEvent
+  - JumpPuzzleTimeoutEvent
+  - QuestEndEvent
+  - QuestStartEvent
+
+## Changes in 1.0.1
 
 - Added Handling of onPlayerFish event so fishing quests can be created
 - Added complete new loging of generating jumping puzzles
@@ -37,6 +48,8 @@
 ✔ **Player Movement Tracking:** Detect when players start and complete puzzles.
 ✔ **Block Restrictions:** Prevent players from modifying puzzle areas.
 ✔ **Puzzle Management Commands:** Create, list, and remove puzzles dynamically.
+✔ **Puzzle Regen Logic:** Regenerate the given puzzle, when the user completes it or using reset block.
+✔ **Server Events:** The plugin sends events when changes are on Quests and Jumping Puzzles.
 
 ---
 
@@ -65,6 +78,14 @@
 3. Players must jump across blocks that are generated to be challenging but solvable.
 4. A tracking system monitors when a player starts and completes the puzzle.
 5. Upon completion, the player receives 100 credits via EconomyAPI.
+6. Once completed, the user is teleported to the center and the puzzle regenerates
+7. If puzzle is imposible, use the green block to regenerate it. Stay on it more than 5 seconds
+
+---
+
+## **For coders**
+
+For more information about the custom events provided by this plugin, see the [Events Documentation](Events.md).
 
 ---
 
@@ -134,7 +155,7 @@ translations:
   [INFO ] [KillQuestPlugin] ██║  ██╗██║███████╗███████╗╚██████╔╝╚██████╔╝███████╗███████║   ██║
   [INFO ] [KillQuestPlugin] ╚═╝  ╚═╝╚═╝╚══════╝╚══════╝ ╚══▀▀═╝  ╚═════╝ ╚══════╝╚══════╝   ╚═╝
   [INFO ] [KillQuestPlugin]
-  [INFO ] [KillQuestPlugin]                            Version: 1.0.0
+  [INFO ] [KillQuestPlugin]                            Version: 1.0.2
   [INFO ] [KillQuestPlugin]                            Developed by digitalwm
   [INFO ] [KillQuestPlugin]
   [INFO ] [KillQuestPlugin] Loaded language: en_US with 41 keys.
@@ -143,12 +164,14 @@ translations:
   [INFO ] [KillQuestPlugin] Total translation keys loaded: 82
   [INFO ] [KillQuestPlugin] KillQuestPlugin enabled with 23 available quests.
   [INFO ] [KillQuestPlugin] EconomyAPI found. Rewards enabled.
+  [INFO ] [KillQuestPlugin] Loading saved puzzles...
+  [INFO ] [KillQuestPlugin] Loaded puzzle: test
   ```
 
 ---
 
 ## **💡 Future Improvements**
-- ✅ **More Quest Types:** Crafting
+- ✅ **More Quest Types:** Crafting, Shooting
 - ✅ **Permissions Support**
 - ✅ **More Customization Options**
 - ✅ **SQL Database support**
