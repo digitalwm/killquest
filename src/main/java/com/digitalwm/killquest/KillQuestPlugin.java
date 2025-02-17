@@ -15,6 +15,7 @@ import cn.nukkit.event.entity.EntityDeathEvent;
 import cn.nukkit.event.entity.EntityDamageByEntityEvent;
 import cn.nukkit.event.inventory.InventoryPickupItemEvent;
 import cn.nukkit.event.player.PlayerFormRespondedEvent;
+import cn.nukkit.event.player.PlayerMoveEvent;
 
 import cn.nukkit.block.Block;
 import cn.nukkit.level.Level;
@@ -332,6 +333,24 @@ public class KillQuestPlugin extends PluginBase implements Listener, CommandExec
             scoreboard.setScore("   " + current + "/" + required, line++);
         }
 
+        // Add distance progress
+        if (quest.getDistance() > 0) {
+            int distanceTraveled = progress.getDistanceTraveled();
+            scoreboard.setScore("§bDi: " + distanceTraveled + "/" + quest.getDistance(), line++);
+        }
+
+        // Add height progress
+        if (quest.getHeight() > 0) {
+            int heightClimbed = progress.getHeightClimbed();
+            scoreboard.setScore("§bH: " + heightClimbed + "/" + quest.getHeight(), line++);
+        }
+
+        // Add depth progress
+        if (quest.getDepth() > 0) {
+            int depthDescended = progress.getDepthDescended();
+            scoreboard.setScore("§bDe: " + depthDescended + "/" + quest.getDepth(), line++);
+        }
+
         // Store and show the scoreboard
         scoreboards.put(player, scoreboard);
         scoreboard.showTo(player);
@@ -387,7 +406,11 @@ public class KillQuestPlugin extends PluginBase implements Listener, CommandExec
                     }
                 }
             }
-            Quest quest = new Quest(name, description, killTargets, gatherItems, reward);
+            int distance = questMap.containsKey("distance") ? Integer.parseInt(questMap.get("distance").toString()) : 0;
+            int height = questMap.containsKey("height") ? Integer.parseInt(questMap.get("height").toString()) : 0;
+            int depth = questMap.containsKey("depth") ? Integer.parseInt(questMap.get("depth").toString()) : 0;
+
+            Quest quest = new Quest(name, description, killTargets, gatherItems, reward, distance, height, depth);
             questList.add(quest);
         }
     }
@@ -427,7 +450,23 @@ public class KillQuestPlugin extends PluginBase implements Listener, CommandExec
                                 }
                             }
                         }
-                        return new ActiveQuest(quest, progress);
+                        if (activeData.containsKey("distanceTraveled")) {
+                            progress.setDistanceTraveled(Integer.parseInt(activeData.get("distanceTraveled").toString()));
+                        }
+                        if (activeData.containsKey("heightClimbed")) {
+                            progress.setHeightClimbed(Integer.parseInt(activeData.get("heightClimbed").toString()));
+                        }
+                        if (activeData.containsKey("depthDescended")) {
+                            progress.setDepthDescended(Integer.parseInt(activeData.get("depthDescended").toString()));
+                        }
+                        String startPosString = (String) activeData.get("startPos");
+                        String[] components = startPosString.substring(1, startPosString.length() - 1).split(",");
+                        Vector3 startPos = new Vector3(
+                            Double.parseDouble(components[0]),
+                            Double.parseDouble(components[1]),
+                            Double.parseDouble(components[2])
+                        ); // Load the starting position
+                        return new ActiveQuest(quest, progress, startPos);
                     }
                 }
             }
@@ -445,6 +484,10 @@ public class KillQuestPlugin extends PluginBase implements Listener, CommandExec
         activeData.put("questName", aq.getQuest().getName());
         activeData.put("kills", aq.getProgress().getKills());
         activeData.put("gather", aq.getProgress().getGather());
+        activeData.put("distanceTraveled", aq.getProgress().getDistanceTraveled());
+        activeData.put("heightClimbed", aq.getProgress().getHeightClimbed());
+        activeData.put("depthDescended", aq.getProgress().getDepthDescended());
+        activeData.put("startPos", aq.getStartPos().toString()); // Save the starting position
 
         File file = new File(playersFolder, playerName + ".yml");
         Config config = new Config(file, Config.YAML);
@@ -487,6 +530,17 @@ public class KillQuestPlugin extends PluginBase implements Listener, CommandExec
                     "': " + inventoryCount + "/" + entry.getValue());
         }
 
+        // Update distance progress
+        Vector3 startPos = aq.getStartPos();
+        Vector3 currentPos = player.getPosition().floor();
+        int distanceTraveled = (int) startPos.distance(currentPos);
+        int heightClimbed = (int) (currentPos.getY() - startPos.getY());
+        int depthDescended = (int) (startPos.getY() - currentPos.getY());
+
+        progress.setDistanceTraveled(distanceTraveled);
+        progress.setHeightClimbed(heightClimbed);
+        progress.setDepthDescended(depthDescended);
+
         // Check for quest completion.
         if (checkQuestCompletion(quest, progress)) {
             // Remove required items from inventory.
@@ -508,6 +562,7 @@ public class KillQuestPlugin extends PluginBase implements Listener, CommandExec
 
             activeQuests.remove(playerName);
             clearActiveQuestProgress(playerName);
+            destroyScoreboard(player);
         } else {
             saveActiveQuestProgress(playerName);
         }
@@ -569,6 +624,21 @@ public class KillQuestPlugin extends PluginBase implements Listener, CommandExec
             if (current < required) {
                 return false;
             }
+        }
+
+        // Check distance traveled
+        if (quest.getDistance() > 0 && progress.getDistanceTraveled() < quest.getDistance()) {
+            return false;
+        }
+
+        // Check height climbed
+        if (quest.getHeight() > 0 && progress.getHeightClimbed() < quest.getHeight()) {
+            return false;
+        }
+
+        // Check depth descended
+        if (quest.getDepth() > 0 && progress.getDepthDescended() < quest.getDepth()) {
+            return false;
         }
         return true;
     }
@@ -738,7 +808,17 @@ public class KillQuestPlugin extends PluginBase implements Listener, CommandExec
         return false;
     }
 
-
+    @EventHandler
+    public void onPlayerMove(PlayerMoveEvent event) {
+        Player player = event.getPlayer();
+        String playerName = player.getName();
+        ActiveQuest aq = activeQuests.get(playerName);
+        if (aq == null) {
+            return;
+        } else {
+            updateQuestProgressForPlayer(player);
+        }
+    }
 
     /**
      * Handles the player's form response for quest selection.
@@ -791,7 +871,8 @@ public class KillQuestPlugin extends PluginBase implements Listener, CommandExec
                 boolean hasActiveQuest = activeQuests.containsKey(player.getName());
 
                 // Update active quest
-                activeQuests.put(player.getName(), new ActiveQuest(selectedQuest, new QuestProgress()));
+                Vector3 startPos = player.getPosition().floor(); // Store the starting position
+                activeQuests.put(player.getName(), new ActiveQuest(selectedQuest, new QuestProgress(), startPos));
                 saveActiveQuestProgress(player.getName());
                 player.sendMessage("§aActive quest set to: " + selectedQuest.getName());
 
@@ -917,6 +998,7 @@ public class KillQuestPlugin extends PluginBase implements Listener, CommandExec
                     getLogger().info("Active quest '" + quest.getName() + "' completed for player " + playerName);
                     activeQuests.remove(playerName);
                     clearActiveQuestProgress(playerName);
+                    destroyScoreboard(player);
                 } else {
                     saveActiveQuestProgress(playerName);
                 }
