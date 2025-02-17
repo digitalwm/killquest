@@ -62,6 +62,7 @@ public class KillQuestPlugin extends PluginBase implements Listener, CommandExec
 
     // Mapping of player's name to their active quest (only one active quest at a time)
     public Map<String, ActiveQuest> activeQuests = new HashMap<>();
+    private final Map<String, Quest> selectedQuests = new HashMap<>();
 
     public Map<Player, Scoreboard> scoreboards = new HashMap<>();
     public static final String SCOREBOARD_TITLE = "§6Active Quest";
@@ -587,10 +588,26 @@ public class KillQuestPlugin extends PluginBase implements Listener, CommandExec
         // Handle Quest Selection
         if (command.getName().equalsIgnoreCase("quests")) {
             List<Quest> quests = getRandomQuestsForPlayer(player.getName());
-            FormWindowSimple form = new FormWindowSimple("Quest Selector", "Select one quest from the list below. Only one active quest is allowed at a time.");
+            FormWindowSimple form = new FormWindowSimple(translate(player, "menu.questselector"), translate(player, "menu.questselector.description"));
             for (Quest quest : quests) {
-                form.addButton(new ElementButton(quest.getName() + "\n" + quest.getDescription()));
+                form.addButton(new ElementButton(quest.getName()));
             }
+            player.showFormWindow(form);
+            return true;
+        }
+
+        // Handle Quest Status Command
+        if (command.getName().equalsIgnoreCase("queststatus")) {
+            ActiveQuest activeQuest = activeQuests.get(player.getName());
+            if (activeQuest == null) {
+                player.sendMessage("§cYou do not have an active quest.");
+                return true;
+            }
+
+            Quest quest = activeQuest.getQuest();
+            FormWindowSimple form = new FormWindowSimple(translate(player, "menu.queststatus"), quest.getDescription());
+            form.addButton(new ElementButton("OK"));
+            form.addButton(new ElementButton("Cancel Quest"));
             player.showFormWindow(form);
             return true;
         }
@@ -733,46 +750,85 @@ public class KillQuestPlugin extends PluginBase implements Listener, CommandExec
         }
 
         FormWindowSimple form = (FormWindowSimple) event.getWindow();
-        if (!form.getTitle().equals("Quest Selector")) {
-            return;
-        }
-
         FormResponseSimple response = (FormResponseSimple) event.getResponse();
         if (response == null) {
             return;
         }
 
-        List<Quest> quests = playerQuestSelections.get(event.getPlayer().getName());
-        if (quests == null) {
-            return;
-        }
-
-        int selected = response.getClickedButtonId();
-        if (selected < 0 || selected >= quests.size()) {
-            return;
-        }
-
         Player player = event.getPlayer();
-        Quest selectedQuest = quests.get(selected);
 
-        // Check if the player already has an active quest
-        boolean hasActiveQuest = activeQuests.containsKey(player.getName());
+        // Handle Quest Selector Form
+        if (form.getTitle().equals(translate(player, "menu.questselector"))) {
+            List<Quest> quests = playerQuestSelections.get(player.getName());
+            if (quests == null) {
+                return;
+            }
 
-        // Update active quest
-        activeQuests.put(player.getName(), new ActiveQuest(selectedQuest, new QuestProgress()));
-        saveActiveQuestProgress(player.getName());
-        player.sendMessage("§aActive quest set to: " + selectedQuest.getName());
+            int selected = response.getClickedButtonId();
+            if (selected < 0 || selected >= quests.size()) {
+                return;
+            }
 
-        // Trigger Quest Start Event
-        onQuestStart(player, selectedQuest.getName());
+            Quest selectedQuest = quests.get(selected);
+            selectedQuests.put(player.getName(), selectedQuest); // Store the selected quest
 
-        // ✅ **Update the Scoreboard Immediately**
-        if (hasActiveQuest) {
-            destroyScoreboard(player);  // Remove old scoreboard
+            FormWindowSimple questDetailsForm = new FormWindowSimple(translate(player, "menu.questdetails"), selectedQuest.getName() + "\n" + selectedQuest.getDescription());
+            questDetailsForm.addButton(new ElementButton("Accept"));
+            questDetailsForm.addButton(new ElementButton("Cancel"));
+            player.showFormWindow(questDetailsForm);
         }
-        createScoreboard(player);  // Create the updated one
-    }
+        // Handle Quest Details Form
+        else if (form.getTitle().equals(translate(player, "menu.questdetails"))) {
+            Quest selectedQuest = selectedQuests.get(player.getName());
+            if (selectedQuest == null) {
+                return;
+            }
 
+            int clickedButtonId = response.getClickedButtonId();
+
+            if (clickedButtonId == 0) { // Accept button
+                // Check if the player already has an active quest
+                boolean hasActiveQuest = activeQuests.containsKey(player.getName());
+
+                // Update active quest
+                activeQuests.put(player.getName(), new ActiveQuest(selectedQuest, new QuestProgress()));
+                saveActiveQuestProgress(player.getName());
+                player.sendMessage("§aActive quest set to: " + selectedQuest.getName());
+
+                // Trigger Quest Start Event
+                onQuestStart(player, selectedQuest.getName());
+
+                // Update the Scoreboard Immediately
+                if (hasActiveQuest) {
+                    destroyScoreboard(player);  // Remove old scoreboard
+                }
+                createScoreboard(player);  // Create the updated one
+            } else if (clickedButtonId == 1) { // Cancel button
+                // Show the quest selector form again
+                List<Quest> quests = getRandomQuestsForPlayer(player.getName());
+                FormWindowSimple questListForm = new FormWindowSimple(translate(player, "menu.questselector"), "Select a quest from the list below.");
+                for (Quest quest : quests) {
+                    questListForm.addButton(new ElementButton(quest.getName()));
+                }
+                player.showFormWindow(questListForm);
+            }
+
+            selectedQuests.remove(player.getName()); // Remove the selected quest from the map
+        }
+        // Handle Quest Status Form
+        else if (form.getTitle().equals(translate(player, "menu.queststatus"))) {
+            int clickedButtonId = response.getClickedButtonId();
+
+            if (clickedButtonId == 1) { // Cancel Quest button
+                ActiveQuest activeQuest = activeQuests.remove(player.getName());
+                if (activeQuest != null) {
+                    clearActiveQuestProgress(player.getName());
+                    player.sendMessage("§cQuest cancelled: " + activeQuest.getQuest().getName());
+                    destroyScoreboard(player); // Remove the scoreboard
+                }
+            }
+        }
+    }
 
     /**
      * Event handler for inventory pickup events.
