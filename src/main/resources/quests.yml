@@ -1,4 +1,19 @@
 quests:
+  - name: "Long Journey"
+    description: "Travel over 500 blocks from your starting position"
+    distance: 500
+    reward: 50
+
+  - name: "High Climb"
+    description: "Climb 200 blocks in height"
+    height: 200
+    reward: 30
+
+  - name: "Deep Dive"
+    description: "Descend 100 blocks in depth"
+    depth: 100
+    reward: 40
+
   - name: "Monster Slayer"
     description: "Kill 10 Zombies and 5 Skeletons"
     killTargets:

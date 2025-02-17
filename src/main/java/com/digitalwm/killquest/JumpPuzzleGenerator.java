@@ -36,6 +36,9 @@ public class JumpPuzzleGenerator {
 
     private final String puzzleName; // ✅ Declare puzzle name
 
+    private boolean resetOnCompletion = true;
+    private int greenBlockResetTimeout = 5; // Default to 5 seconds
+
     public JumpPuzzleGenerator(KillQuestPlugin plugin, Level level, Vector3 startPos, String puzzleName, int length, int width, int maxHeight) {
         this.level = level;
         this.startPos = startPos;
@@ -51,11 +54,26 @@ public class JumpPuzzleGenerator {
         maxHeight++;
         puzzleMin = new Vector3(startPos.x - width / 2, startPos.y, startPos.z - length / 2);
         puzzleMax = new Vector3(startPos.x + width / 2, startPos.y + maxHeight, startPos.z + length / 2);
-        plugin.getLogger().info("Puzzle boundaries set: " + puzzleMin + " to " + puzzleMax);
     }
 
     public String getPuzzleName() {
         return puzzleName;
+    }
+    
+    public boolean isResetOnCompletion() {
+        return resetOnCompletion;
+    }
+
+    public void setResetOnCompletion(boolean resetOnCompletion) {
+        this.resetOnCompletion = resetOnCompletion;
+    }
+
+    public int getGreenBlockResetTimeout() {
+        return greenBlockResetTimeout;
+    }
+
+    public void setGreenBlockResetTimeout(int greenBlockResetTimeout) {
+        this.greenBlockResetTimeout = greenBlockResetTimeout;
     }
 
     public void generate() {
@@ -326,7 +344,7 @@ public class JumpPuzzleGenerator {
                 playerGreenBlockTimes.put(player, currentTime);
             } else {
                 long timeOnGreenBlock = currentTime - playerGreenBlockTimes.get(player);
-                if (timeOnGreenBlock > 5000) { // 5 seconds
+                if (timeOnGreenBlock > greenBlockResetTimeout * 1000) { // 5 seconds
                     player.sendMessage("§cYou stayed on the green block for too long! The puzzle has been reset.");
                     resetPuzzleForPlayer(player);
                 }
@@ -349,7 +367,10 @@ public class JumpPuzzleGenerator {
                 EconomyAPI.getInstance().addMoney(player, 100);
                 plugin.onJumpPuzzleEnd(player, puzzleName); // Trigger end event
                 playerStartTimes.remove(player);
-                resetPuzzleForPlayer(player);
+
+                if (resetOnCompletion) {
+                    resetPuzzleForPlayer(player);
+                }
             }
         }
     }
