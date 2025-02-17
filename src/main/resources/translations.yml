@@ -44,7 +44,7 @@ translations:
     menu.questselector: "Quest Selection"
     menu.questdetails: "Quest Details"
     menu.queststatus: "Active Quest"
-    menu.questselecto.description: "Select one quest from the list below. Only one active quest is allowed at a time."
+    menu.questselector.description: "Select one quest from the list below. Only one active quest is allowed at a time."
   de_DE:
     entity.minecraft.zombie: "Zombie"
     entity.minecraft.skeleton: "Skelett"
@@ -90,4 +90,4 @@ translations:
     menu.questselector: "Questauswahl"
     menu.questdetails: "Questdetails"
     menu.queststatus: "Aktive Quest"
-    menu.questselecto.description: "Wählen Sie eine Quest aus der folgenden Liste aus. Es ist nur eine aktive Quest gleichzeitig erlaubt."
+    menu.questselector.description: "Wählen Sie eine Quest aus der folgenden Liste aus. Es ist nur eine aktive Quest gleichzeitig erlaubt."
