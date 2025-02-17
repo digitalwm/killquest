@@ -1,7 +1,23 @@
-## **KillQuest - A Nukkit Quest System** v1.0.2
+## **KillQuest - A Nukkit Quest System** v1.0.3
 **KillQuest** is a **feature-rich quest system** for **Nukkit** servers, allowing players to complete **kill and gather quests** for rewards, and challenge themselves with procedurally generated jumping puzzles. It includes **multilingual support**, **scoreboard tracking**, and **EconomyAPI integration**.
 
 ---
+
+## Changes in 1.0.3
+- Added quest tracking for distance traveled (in height, depth or any direction)
+  - see example quests.yml
+- Added better Forms handling of quest selection
+- Added /queststatus command to show the detailed view of the active quest
+- Added the ability to cancel the active quest in the /queststatus command
+- Added the configuration possibility for generated kumpign puzzles
+  - /jumpconfig <name> <resetOnCompletion> <greenBlockResetTimeout>
+  - resetOnCompletion - Boolean - To regenerate the puzzle when a player finishes the puzzle
+  - greenBlockResetTimeout - Int - How many seconds a player have to sit on the green block to triger jumping puzzle regeneration
+- Added translation keys for Quest Menus
+  - menu.questselector
+  - menu.questdetails
+  - menu.queststatus
+  - menu.questselector.description
 
 ## Changes in 1.0.2
 - Added regenaration of puzzle when a user finishes it
@@ -37,8 +53,9 @@
 ---
 
 ## **📜 Features**
-- **Quest System:** Kill entities and gather items to complete quests.  
-- **Dynamic Quest Selection:** Players can select quests using a UI (`/quests`).  
+- **Quest System:** Kill entities, gather items or travel distances to complete quests.  
+- **Dynamic Quest Selection:** Players can select quests using a UI (`/quests`).
+- **Active Quest Status:** Players can view active quests using a UI (`/questsstatus`). 
 - **Scoreboard Tracking:** Displays active quest progress in the top-right.  
 - **Auto-Saving:** Quest progress is saved to files per player.  
 - **EconomyAPI Integration:** Players earn credits upon completion.  
@@ -112,9 +129,25 @@ quests:
       diamond: 20
       iron_ore: 50
     reward: 200
+
+  - name: "Long Journey"
+    description: "Travel over 500 blocks from your starting position"
+    distance: 500
+    reward: 50
+
+  - name: "High Climb"
+    description: "Climb 200 blocks in height"
+    height: 200
+    reward: 30
+
+  - name: "Deep Dive"
+    description: "Descend 100 blocks in depth"
+    depth: 100
+    reward: 40
 ```
 - **Kill Targets:** Define entities to kill.
 - **Gather Items:** Define items to collect.
+- **Distance Traveled:** Define distance to travel (in range, height or depth).
 - **Reward:** Credits given via EconomyAPI.
 
 ### **`translations.yml`**
@@ -137,10 +170,12 @@ translations:
 | Command | Description |
 |---------|------------|
 | `/quests` | Opens the quest selection UI |
+| `/questsstatus` | Opens the active quest status UI |
 | `/killquest reload` | Reloads quests and translations |
 | `/jumpgen <name> <length> <width> <height>` | Generates a jumping puzzle with a unique name. |
 | `/clearpuzzle <name>` | Clears a specific puzzle. |
 | `/listpuzzles` | Lists all active puzzles. |
+| `/jumpconfig <name> <resetOnCompletion> <greenBlockResetTimeout>` | Adjust values of generated jumping puzzle |
 
 ---
 
@@ -155,7 +190,7 @@ translations:
   [INFO ] [KillQuestPlugin] ██║  ██╗██║███████╗███████╗╚██████╔╝╚██████╔╝███████╗███████║   ██║
   [INFO ] [KillQuestPlugin] ╚═╝  ╚═╝╚═╝╚══════╝╚══════╝ ╚══▀▀═╝  ╚═════╝ ╚══════╝╚══════╝   ╚═╝
   [INFO ] [KillQuestPlugin]
-  [INFO ] [KillQuestPlugin]                            Version: 1.0.2
+  [INFO ] [KillQuestPlugin]                            Version: 1.0.3
   [INFO ] [KillQuestPlugin]                            Developed by digitalwm
   [INFO ] [KillQuestPlugin]
   [INFO ] [KillQuestPlugin] Loaded language: en_US with 41 keys.
@@ -172,7 +207,6 @@ translations:
 
 ## **💡 Future Improvements**
 - ✅ **More Quest Types:** Crafting, Shooting
-- ✅ **Permissions Support**
 - ✅ **More Customization Options**
 - ✅ **SQL Database support**
   
